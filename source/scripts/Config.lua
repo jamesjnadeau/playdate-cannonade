@@ -34,13 +34,28 @@ Config.EXPLOSION = {
 }
 
 -- Ship ----------------------------------------------------------------------
-Config.SHIP_MAX_SPEED = 130     -- pixels / second
-Config.SHIP_ACCEL     = 90      -- pixels / second, added per second while held
+Config.SHIP_MAX_SPEED     = 130     -- pixels / second
+Config.SHIP_DEFAULT_SPEED = 60      -- guaranteed baseline forward speed regardless of sail/wind
+Config.SHIP_ACCEL        = 90       -- pixels / second, added per second while easing toward target speed
 Config.SHIP_TURN_SCALE = 0.55   -- crank-degrees -> heading-degrees multiplier
 Config.SHIP_COLLIDE_RADIUS    = 12      -- collision radius
 Config.SHIP_MAX_HEALTH = 5
 Config.SHIP_LENGTH    = 15      -- half-length of hull when drawn, default 22
 Config.SHIP_BEAM      = 4       -- half-width of hull when drawn
+
+-- Sail ------------------------------------------------------------------
+-- Up/Down let the sail out / trim it in (0 = trimmed in, 1 = fully out).
+Config.SAIL_TRIM_START = 0.5  -- trim the player starts each run with
+Config.SAIL_TRIM_RATE  = 1.2  -- trim units / second while Up/Down is held
+Config.SAIL_MAX_ANGLE  = 90   -- max degrees the boom can swing from the centerline (rigging limit)
+Config.SAIL_LENGTH     = 14   -- px length of the drawn sail
+
+-- Wind --------------------------------------------------------------------
+-- Direction is the angle the wind blows TOWARD (same convention as heading).
+Config.WIND_SPEED                = 70 -- px/s a fully-out sail catches running dead downwind
+Config.WIND_DIRECTION_DRIFT_RATE = 4  -- max degrees/second the wind direction wanders
+Config.WIND_INDICATOR_CIRCLE_SIZE = 20
+Config.WIND_INDICATOR_SIZE = 12
 
 -- Enemies -------------------------------------------------------------------
 Config.ENEMY_SPEED      = 78    -- pixels / second (slower than you at full sail)

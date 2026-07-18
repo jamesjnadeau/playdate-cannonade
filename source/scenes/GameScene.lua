@@ -1,6 +1,9 @@
 -- GameScene.lua
--- The sailing/combat scene. All rendering happens here in immediate mode
--- inside update(), which Noble runs after its sprite+background pass.
+-- Base class for the sailing/combat scenes (GameSceneMain, GameSceneTest).
+-- Holds everything they share: ship/wind/cannon physics, enemy and
+-- cannonball collision handling, and all rendering. Subclasses hook in
+-- their own enemy-spawning policy and extra HUD text; see updateSpawning()
+-- and drawModeStatus() below. This class is never instantiated directly.
 
 import "scripts/Config"
 import "scripts/Utils"
@@ -14,10 +17,13 @@ GameScene = {}
 class("GameScene").extends(NobleScene)
 
 -- File-local handle to the live scene so the (class-level) inputHandler
--- callbacks can talk to the current instance.
+-- callbacks -- in this class and in subclasses -- can talk to the current
+-- instance. GameScene.current() is the accessor subclasses should use.
 local scene = nil
 
-local function lerp(a, b, t) return a + (b - a) * t end
+function GameScene.current()
+	return scene
+end
 
 -- Remove every particle system the library is tracking. Guarded so a version
 -- mismatch in the library's global API can't hard-crash the scene (worst case:
@@ -58,6 +64,9 @@ function GameScene:finish()
 	if scene == self then scene = nil end
 end
 
+-- Generic state every variant needs. Subclasses that track anything extra
+-- (level progress, spawn timers, ...) should override this, call
+-- GameScene.super.resetGame(self, sceneProperties) first, then add their own.
 function GameScene:resetGame(sceneProperties)
 	sceneProperties = sceneProperties or {}
 	clearAllParticles()
@@ -66,61 +75,72 @@ function GameScene:resetGame(sceneProperties)
 	self.cannonballs = {}
 	self.explosions = {}
 	self.elapsed = 0
-	self.spawnTimer = Config.SPAWN_INTERVAL_START
-	self.level = sceneProperties.level or 1
-	self.score = sceneProperties.totalDefeated or 0 -- cumulative across all levels this run
-	self.levelKills = 0                             -- kills toward clearing the current level
-	self.levelSpawned = 0                           -- enemies spawned so far this level
-	self.levelTarget = self.level * Config.LEVEL_ENEMY_STEP
+	self.score = 0
 	self.gameOver = false
-	self.levelComplete = false
+
+	self.windDirection = math.random() * 360
+	self.windSpeed = Config.WIND_SPEED
 
 	-- Input state
-	self.speedInput = 0        -- -1 / 0 / +1 throttle from Up/Down
+	self.trimInput = 0         -- -1 / 0 / +1 sail trim adjustment from Up/Down
 	self.chargingSide = nil
 	self.charge = 0
 	self.target = nil
 end
 
 -- ---------------------------------------------------------------------------
--- Input (class-level handler; callbacks defer to `scene`)
+-- Input (class-level handlers; callbacks defer to the current instance)
 -- ---------------------------------------------------------------------------
 
-GameScene.inputHandler = {
-	-- Crank steers the helm.
-	cranked = function(change, _)
-		if scene and not scene.gameOver then scene.ship:steer(change) end
-	end,
-	-- Up/Down set a persistent throttle flag; the tick applies it each frame.
-	upButtonDown = function()
-		if scene then scene.speedInput = 1 end
-	end,
-	upButtonUp = function()
-		if scene and scene.speedInput == 1 then scene.speedInput = 0 end
-	end,
-	downButtonDown = function()
-		if scene then scene.speedInput = -1 end
-	end,
-	downButtonUp = function()
-		if scene and scene.speedInput == -1 then scene.speedInput = 0 end
-	end,
-	-- Left/Right begin charging a broadside; release fires.
-	leftButtonDown = function()
-		if scene and not scene.gameOver then scene:beginCharge("port") end
-	end,
-	leftButtonUp = function()
-		if scene then scene:releaseCharge("port") end
-	end,
-	rightButtonDown = function()
-		if scene and not scene.gameOver then scene:beginCharge("starboard") end
-	end,
-	rightButtonUp = function()
-		if scene then scene:releaseCharge("starboard") end
-	end,
-	AButtonDown = function()
-		if scene and scene.gameOver then Noble.transition(GameScene) end
-	end,
-}
+-- The steering/trim/cannon bindings every variant shares. Each subclass
+-- builds its own inputHandler from this (input tables don't merge through
+-- inheritance the way methods do) and adds its own A/B bindings on top.
+-- `getScene` should return the currently-active instance -- pass
+-- GameScene.current.
+function GameScene.buildSharedInputHandler(getScene)
+	return {
+		-- Crank steers the helm.
+		cranked = function(change, _)
+			local s = getScene()
+			if s and not s.gameOver then s.ship:steer(change) end
+		end,
+		-- Up/Down set a persistent sail-trim flag; the tick applies it each
+		-- frame. Up lets the sail out, Down trims it in.
+		upButtonDown = function()
+			local s = getScene()
+			if s then s.trimInput = 1 end
+		end,
+		upButtonUp = function()
+			local s = getScene()
+			if s and s.trimInput == 1 then s.trimInput = 0 end
+		end,
+		downButtonDown = function()
+			local s = getScene()
+			if s then s.trimInput = -1 end
+		end,
+		downButtonUp = function()
+			local s = getScene()
+			if s and s.trimInput == -1 then s.trimInput = 0 end
+		end,
+		-- Left/Right begin charging a broadside; release fires.
+		leftButtonDown = function()
+			local s = getScene()
+			if s and not s.gameOver then s:beginCharge("port") end
+		end,
+		leftButtonUp = function()
+			local s = getScene()
+			if s then s:releaseCharge("port") end
+		end,
+		rightButtonDown = function()
+			local s = getScene()
+			if s and not s.gameOver then s:beginCharge("starboard") end
+		end,
+		rightButtonUp = function()
+			local s = getScene()
+			if s then s:releaseCharge("starboard") end
+		end,
+	}
+end
 
 -- ---------------------------------------------------------------------------
 -- Cannon: charging + auto-target
@@ -187,17 +207,15 @@ function GameScene:currentAimSpread()
 end
 
 -- ---------------------------------------------------------------------------
--- Enemies / difficulty
+-- Enemies
 -- ---------------------------------------------------------------------------
 
-function GameScene:currentSpawnInterval()
-	local t = Utils.clamp(self.elapsed / Config.SPAWN_RAMP_SECONDS, 0, 1)
-	return lerp(Config.SPAWN_INTERVAL_START, Config.SPAWN_INTERVAL_FLOOR, t)
-end
-
+-- Spawns one enemy at a random position around the ship. Returns whether it
+-- actually spawned one (false if already at MAX_ENEMIES). Subclasses that
+-- gate spawning further (e.g. a per-level cap) should override this, check
+-- their own condition, then delegate to GameScene.super.spawnEnemy(self).
 function GameScene:spawnEnemy()
-	if #self.enemies >= Config.MAX_ENEMIES then return end
-	if self.levelSpawned >= self.levelTarget then return end
+	if #self.enemies >= Config.MAX_ENEMIES then return false end
 	local ship = self.ship
 	local ang = math.random() * 360
 	local ax, ay = Utils.heading(ang)
@@ -206,18 +224,23 @@ function GameScene:spawnEnemy()
 	local ey = Utils.clamp(ship.y + ay * dist, 0, Config.WORLD_H)
 	local facing = Utils.angleTo(ex, ey, ship.x, ship.y)
 	self.enemies[#self.enemies + 1] = Enemy(ex, ey, facing)
-	self.levelSpawned = self.levelSpawned + 1
+	return true
 end
+
+-- Hook for automatic spawning; called once per tick. The base scene never
+-- spawns on its own (GameSceneTest relies on this); GameSceneMain overrides
+-- it to spawn on a timer.
+function GameScene:updateSpawning(dt) end
 
 function GameScene:addExplosion(ship)
 	self.explosions[#self.explosions + 1] = ship:explode()
 end
 
--- Call whenever an enemy is destroyed, however it died (rammed or cannoned),
--- so both the running total and the current level's progress stay in sync.
+-- Call whenever an enemy is destroyed, however it died (rammed or cannoned).
+-- Subclasses that track further progress (level kills, ...) should override
+-- this and call GameScene.super.enemyDefeated(self) first.
 function GameScene:enemyDefeated()
 	self.score = self.score + 1
-	self.levelKills = self.levelKills + 1
 end
 
 -- ---------------------------------------------------------------------------
@@ -227,7 +250,7 @@ end
 function GameScene:update()
 	GameScene.super.update(self)
 
-	if not self.gameOver and not self.levelComplete then
+	if not self.gameOver then
 		self:tickGame()
 	end
 
@@ -238,9 +261,13 @@ function GameScene:tickGame()
 	local dt = Config.DT
 	self.elapsed = self.elapsed + dt
 
-	-- Apply throttle (held Up/Down) and cannon charge (held Left/Right).
-	if self.speedInput ~= 0 then
-		self.ship:changeSpeed(self.speedInput)
+	-- Wind wanders slowly rather than sitting still all run.
+	self.windDirection = Utils.wrapDeg(
+		self.windDirection + (math.random() * 2 - 1) * Config.WIND_DIRECTION_DRIFT_RATE * dt)
+
+	-- Apply sail trim (held Up/Down) and cannon charge (held Left/Right).
+	if self.trimInput ~= 0 then
+		self.ship:adjustSailTrim(self.trimInput * Config.SAIL_TRIM_RATE * dt)
 	end
 	if self.chargingSide then
 		self.target = self:pickTarget(self.chargingSide)
@@ -253,14 +280,9 @@ function GameScene:tickGame()
 		end
 	end
 
-	self.ship:update()
+	self.ship:update(self.windDirection, self.windSpeed)
 
-	-- Spawn on a shrinking interval.
-	self.spawnTimer = self.spawnTimer - dt
-	if self.spawnTimer <= 0 then
-		self:spawnEnemy()
-		self.spawnTimer = self:currentSpawnInterval()
-	end
+	self:updateSpawning(dt)
 
 	-- Enemies chase; check ramming.
 	local ship = self.ship
@@ -295,17 +317,6 @@ function GameScene:tickGame()
 		if hit or b.dead then
 			table.remove(self.cannonballs, i)
 		end
-	end
-
-	-- Level clears once enough enemies have been defeated; hand off to the
-	-- interstitial scene, which restarts GameScene at the next level with
-	-- health reset (Player:init always sets full health).
-	if self.levelKills >= self.levelTarget then
-		self.levelComplete = true
-		Noble.transition(LevelCompleteScene, nil, nil, nil, {
-			completedLevel = self.level,
-			totalDefeated = self.score,
-		})
 	end
 end
 
@@ -350,6 +361,8 @@ function GameScene:render()
 	self:drawTargetingLine(camX, camY)
 	self:drawOffscreenArrows(camX, camY)
 	self:drawHUD()
+	self:drawModeStatus()
+	self:drawWindIndicator()
 	if self.gameOver then self:drawGameOver() end
 end
 
@@ -474,10 +487,6 @@ function GameScene:drawHUD()
 		end
 	end
 
-	-- Score (top-right)
-	-- gfx.drawText("* " .. self.score, Config.SCREEN_W - 60, 6)
-	gfx.drawText("LV " .. self.level .. "  " .. self.levelKills .. "/" .. self.levelTarget, Config.SCREEN_W - 90, 6) -- 20
-
 	-- Speed gauge (bottom-left)
 	local gw, gh = 90, 8
 	local gx, gy = 6, Config.SCREEN_H - 16
@@ -485,6 +494,19 @@ function GameScene:drawHUD()
 	gfx.drawRect(gx, gy, gw, gh)
 	local fill = (self.ship.speed / Config.SHIP_MAX_SPEED) * (gw - 2)
 	gfx.fillRect(gx + 1, gy + 1, fill, gh - 2)
+end
+
+-- Hook for whatever status text belongs in the top-right (level progress,
+-- test-mode hints, ...). The base scene shows nothing.
+function GameScene:drawModeStatus() end
+
+-- Bottom-right compass showing which way the wind currently blows.
+function GameScene:drawWindIndicator()
+	local cx, cy = Config.SCREEN_W - 26, Config.SCREEN_H - 30
+	gfx.setColor(gfx.kColorBlack)
+	gfx.drawText("WIND", Config.SCREEN_W - 46, Config.SCREEN_H - 50)
+	gfx.drawCircleAtPoint(cx, cy, Config.WIND_INDICATOR_CIRCLE_SIZE)
+	self:drawArrow(cx, cy, self.windDirection, Config.WIND_INDICATOR_SIZE)
 end
 
 function GameScene:drawGameOver()
@@ -495,6 +517,12 @@ function GameScene:drawGameOver()
 	gfx.setImageDrawMode(gfx.kDrawModeFillWhite)
 	gfx.drawTextAligned("SUNK!", Config.SCREEN_W / 2, 96, kTextAlignment.center)
 	gfx.drawTextAligned("Plunder: " .. self.score, Config.SCREEN_W / 2, 116, kTextAlignment.center)
-	gfx.drawTextAligned("Ⓐ to set sail again", Config.SCREEN_W / 2, 134, kTextAlignment.center)
+	gfx.drawTextAligned(self:gameOverPrompt(), Config.SCREEN_W / 2, 134, kTextAlignment.center)
 	gfx.setImageDrawMode(gfx.kDrawModeCopy)
+end
+
+-- What to tell the player to do once sunk; each mode's A/B bindings mean
+-- something different, so this can't be one fixed string.
+function GameScene:gameOverPrompt()
+	return "Ⓐ to set sail again"
 end

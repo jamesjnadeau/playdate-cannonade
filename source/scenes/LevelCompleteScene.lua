@@ -1,6 +1,6 @@
 -- LevelCompleteScene.lua
 -- Interstitial shown after clearing a level: reports the running defeated
--- total, then hands off to GameScene for the next level with health reset.
+-- total, then hands off to GameSceneMain for the next level with health reset.
 
 import "scripts/Config"
 
@@ -32,7 +32,7 @@ end
 LevelCompleteScene.inputHandler = {
 	AButtonDown = function()
 		if scene then
-			Noble.transition(GameScene, nil, nil, nil, {
+			Noble.transition(GameSceneMain, nil, nil, nil, {
 				level = scene.completedLevel + 1,
 				totalDefeated = scene.totalDefeated,
 			})

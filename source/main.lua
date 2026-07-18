@@ -20,6 +20,8 @@ import "scripts/Enemy"
 import "scripts/Cannonball"
 import "scenes/TitleScene"
 import "scenes/GameScene"
+import "scenes/GameSceneMain"
+import "scenes/GameSceneTest"
 import "scenes/LevelCompleteScene"
 
 -- Lock to a fixed 30fps so our fixed-timestep (Config.DT) matches wall-clock.

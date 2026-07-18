@@ -1,5 +1,5 @@
 -- TitleScene.lua
--- Simple start screen. Press A to sail into GameScene.
+-- Start screen: Up/Down pick a scene, A confirms.
 
 import "scripts/Config"
 
@@ -10,10 +10,17 @@ class("TitleScene").extends(NobleScene)
 
 local scene = nil
 
+-- Menu labels, in order. Kept as plain display strings -- the scene classes
+-- themselves are only referenced inside confirmSelection() below, which runs
+-- long after every scene file has finished loading, so load order here
+-- doesn't matter.
+local MENU_ITEMS = { "Play", "Test Enemies" }
+
 function TitleScene:init(...)
 	TitleScene.super.init(self, ...)
 	self.backgroundColor = gfx.kColorWhite
 	self.t = 0
+	self.selected = 1
 end
 
 function TitleScene:start()
@@ -26,10 +33,27 @@ function TitleScene:finish()
 	scene = nil
 end
 
+local function confirmSelection()
+	if not scene then return end
+	if scene.selected == 1 then
+		Noble.transition(GameSceneMain)
+	else
+		Noble.transition(GameSceneTest)
+	end
+end
+
 TitleScene.inputHandler = {
-	AButtonDown = function()
-		if scene then Noble.transition(GameScene) end
+	upButtonDown = function()
+		if not scene then return end
+		scene.selected = scene.selected - 1
+		if scene.selected < 1 then scene.selected = #MENU_ITEMS end
 	end,
+	downButtonDown = function()
+		if not scene then return end
+		scene.selected = scene.selected + 1
+		if scene.selected > #MENU_ITEMS then scene.selected = 1 end
+	end,
+	AButtonDown = function() confirmSelection() end,
 }
 
 function TitleScene:update()
@@ -42,12 +66,18 @@ function TitleScene:update()
 	gfx.drawTextAligned("* CANNONADE *", cx, 40, kTextAlignment.center)
 	gfx.drawTextAligned("a Playdate pirate voyage", cx, 62, kTextAlignment.center)
 
-	gfx.drawTextAligned("Crank to steer the helm", cx, 104, kTextAlignment.center)
-	gfx.drawTextAligned("Up/Down to trim the sails", cx, 122, kTextAlignment.center)
-	gfx.drawTextAligned("Left/Right to charge a broadside", cx, 140, kTextAlignment.center)
+	gfx.drawTextAligned("Crank to steer the helm", cx, 96, kTextAlignment.center)
+	gfx.drawTextAligned("Up/Down to trim the sails", cx, 112, kTextAlignment.center)
+	gfx.drawTextAligned("Left/Right to charge a broadside", cx, 128, kTextAlignment.center)
+
+	local menuTop = 158
+	for i, label in ipairs(MENU_ITEMS) do
+		local text = (i == self.selected) and ("> " .. label .. " <") or label
+		gfx.drawTextAligned(text, cx, menuTop + (i - 1) * 16, kTextAlignment.center)
+	end
 
 	-- Blinking prompt.
 	if math.floor(self.t * 2) % 2 == 0 then
-		gfx.drawTextAligned("Press Ⓐ to set sail", cx, 186, kTextAlignment.center)
+		gfx.drawTextAligned("Ⓐ to select", cx, menuTop + #MENU_ITEMS * 16 + 10, kTextAlignment.center)
 	end
 end
