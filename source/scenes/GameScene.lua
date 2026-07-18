@@ -1,0 +1,425 @@
+-- GameScene.lua
+-- The sailing/combat scene. All rendering happens here in immediate mode
+-- inside update(), which Noble runs after its sprite+background pass.
+
+import "scripts/Config"
+import "scripts/Utils"
+import "scripts/Ship"
+import "scripts/Enemy"
+import "scripts/Cannonball"
+
+local gfx <const> = playdate.graphics
+
+GameScene = {}
+class("GameScene").extends(NobleScene)
+
+-- File-local handle to the live scene so the (class-level) inputHandler
+-- callbacks can talk to the current instance.
+local scene = nil
+
+local function lerp(a, b, t) return a + (b - a) * t end
+
+-- Remove every particle system the library is tracking. Guarded so a version
+-- mismatch in the library's global API can't hard-crash the scene (worst case:
+-- a small leak of spent systems across restarts).
+local function clearAllParticles()
+	if Particles then
+		if Particles.removeAll then
+			Particles:removeAll()
+		elseif Particles.clearAll then
+			Particles:clearAll()
+		end
+	end
+end
+
+-- ---------------------------------------------------------------------------
+-- Lifecycle
+-- ---------------------------------------------------------------------------
+
+-- Build all game state in init() (runs before the scene's first update()).
+-- Noble may call update() during the tail of a scene transition, before
+-- start() fires, so nothing here may be left until start().
+function GameScene:init(...)
+	GameScene.super.init(self, ...)
+	self.backgroundColor = gfx.kColorWhite
+	scene = self
+	self:resetGame()
+end
+
+function GameScene:start()
+	GameScene.super.start(self)
+	scene = self
+	Noble.Input.setCrankIndicatorStatus(true) -- prompt the player to use the crank
+end
+
+function GameScene:finish()
+	GameScene.super.finish(self)
+	clearAllParticles() -- drop every particle system this scene created
+	if scene == self then scene = nil end
+end
+
+function GameScene:resetGame()
+	clearAllParticles()
+	self.ship = Ship(Config.WORLD_W / 2, Config.WORLD_H / 2)
+	self.enemies = {}
+	self.cannonballs = {}
+	self.explosions = {}
+	self.elapsed = 0
+	self.spawnTimer = Config.SPAWN_INTERVAL_START
+	self.score = 0
+	self.gameOver = false
+
+	-- Input state
+	self.speedInput = 0        -- -1 / 0 / +1 throttle from Up/Down
+	self.chargingSide = nil
+	self.charge = 0
+	self.target = nil
+end
+
+-- ---------------------------------------------------------------------------
+-- Input (class-level handler; callbacks defer to `scene`)
+-- ---------------------------------------------------------------------------
+
+GameScene.inputHandler = {
+	-- Crank steers the helm.
+	cranked = function(change, _)
+		if scene and not scene.gameOver then scene.ship:steer(change) end
+	end,
+	-- Up/Down set a persistent throttle flag; the tick applies it each frame.
+	upButtonDown = function()
+		if scene then scene.speedInput = 1 end
+	end,
+	upButtonUp = function()
+		if scene and scene.speedInput == 1 then scene.speedInput = 0 end
+	end,
+	downButtonDown = function()
+		if scene then scene.speedInput = -1 end
+	end,
+	downButtonUp = function()
+		if scene and scene.speedInput == -1 then scene.speedInput = 0 end
+	end,
+	-- Left/Right begin charging a broadside; release fires.
+	leftButtonDown = function()
+		if scene and not scene.gameOver then scene:beginCharge("port") end
+	end,
+	leftButtonUp = function()
+		if scene then scene:releaseCharge("port") end
+	end,
+	rightButtonDown = function()
+		if scene and not scene.gameOver then scene:beginCharge("starboard") end
+	end,
+	rightButtonUp = function()
+		if scene then scene:releaseCharge("starboard") end
+	end,
+	AButtonDown = function()
+		if scene and scene.gameOver then Noble.transition(GameScene) end
+	end,
+}
+
+-- ---------------------------------------------------------------------------
+-- Cannon: charging + auto-target
+-- ---------------------------------------------------------------------------
+
+function GameScene:beginCharge(side)
+	self.chargingSide = side
+	self.charge = 0
+	self.target = self:pickTarget(side)
+end
+
+-- Choose the nearest enemy on the given side, within targeting range.
+function GameScene:pickTarget(side)
+	local ship = self.ship
+	local fx, fy = Utils.heading(ship.heading)
+	local best, bestD2 = nil, Config.TARGET_RANGE * Config.TARGET_RANGE
+	for _, e in ipairs(self.enemies) do
+		local dx, dy = e.x - ship.x, e.y - ship.y
+		local cross = fx * dy - fy * dx      -- >0 starboard, <0 port
+		local onSide = (side == "starboard" and cross > 0) or (side == "port" and cross < 0)
+		if onSide then
+			local d2 = dx * dx + dy * dy
+			if d2 < bestD2 then
+				bestD2 = d2
+				best = e
+			end
+		end
+	end
+	return best
+end
+
+function GameScene:releaseCharge(side)
+	if self.chargingSide ~= side then return end
+	if not self.gameOver then
+		local ship = self.ship
+		local dir
+		local target = self.target or self:pickTarget(side)
+		if target then
+			dir = Utils.angleTo(ship.x, ship.y, target.x, target.y)
+		else
+			-- Nothing to lock onto: fire a broadside straight out that side.
+			dir = Utils.wrapDeg(ship.heading + (side == "starboard" and 90 or -90))
+		end
+		local speed = lerp(Config.CANNON_MIN_SPEED, Config.CANNON_MAX_SPEED, self.charge)
+		local hx, hy = Utils.heading(dir)
+		local bx = ship.x + hx * (Config.SHIP_LENGTH + 4)
+		local by = ship.y + hy * (Config.SHIP_LENGTH + 4)
+		self.cannonballs[#self.cannonballs + 1] = Cannonball(bx, by, dir, speed)
+	end
+
+	self.chargingSide = nil
+	self.charge = 0
+	self.target = nil
+end
+
+-- ---------------------------------------------------------------------------
+-- Enemies / difficulty
+-- ---------------------------------------------------------------------------
+
+function GameScene:currentSpawnInterval()
+	local t = Utils.clamp(self.elapsed / Config.SPAWN_RAMP_SECONDS, 0, 1)
+	return lerp(Config.SPAWN_INTERVAL_START, Config.SPAWN_INTERVAL_FLOOR, t)
+end
+
+function GameScene:spawnEnemy()
+	if #self.enemies >= Config.MAX_ENEMIES then return end
+	local ship = self.ship
+	local ang = math.random() * 360
+	local ax, ay = Utils.heading(ang)
+	local dist = 250 + math.random() * 120 -- just beyond the screen's corner
+	local ex = Utils.clamp(ship.x + ax * dist, 0, Config.WORLD_W)
+	local ey = Utils.clamp(ship.y + ay * dist, 0, Config.WORLD_H)
+	local facing = Utils.angleTo(ex, ey, ship.x, ship.y)
+	self.enemies[#self.enemies + 1] = Enemy(ex, ey, facing)
+end
+
+function GameScene:addExplosion(x, y)
+	local e = ParticleCircle(x, y)
+	e:setMode(Particles.modes.DISAPPEAR)
+	e:setSize(2, 5)
+	e:setSpeed(2, 9)            -- pdParticles speed is per-frame
+	e:setSpread(0, 359)
+	e:setLifespan(4, 9)
+	e:setColor(gfx.kColorBlack)
+	e:add(22)
+	self.explosions[#self.explosions + 1] = { sys = e, age = 0 }
+end
+
+-- ---------------------------------------------------------------------------
+-- Update
+-- ---------------------------------------------------------------------------
+
+function GameScene:update()
+	GameScene.super.update(self)
+
+	if not self.gameOver then
+		self:tickGame()
+	end
+
+	self:render()
+end
+
+function GameScene:tickGame()
+	local dt = Config.DT
+	self.elapsed = self.elapsed + dt
+
+	-- Apply throttle (held Up/Down) and cannon charge (held Left/Right).
+	if self.speedInput ~= 0 then
+		self.ship:changeSpeed(self.speedInput)
+	end
+	if self.chargingSide then
+		self.charge = math.min(1, self.charge + Config.CHARGE_RATE * dt)
+		self.target = self:pickTarget(self.chargingSide)
+	end
+
+	self.ship:update()
+
+	-- Spawn on a shrinking interval.
+	self.spawnTimer = self.spawnTimer - dt
+	if self.spawnTimer <= 0 then
+		self:spawnEnemy()
+		self.spawnTimer = self:currentSpawnInterval()
+	end
+
+	-- Enemies chase; check ramming.
+	local ship = self.ship
+	for i = #self.enemies, 1, -1 do
+		local e = self.enemies[i]
+		e:update(ship.x, ship.y)
+		if Utils.dist(e.x, e.y, ship.x, ship.y) < (Config.SHIP_RADIUS + e.radius) then
+			self:addExplosion(e.x, e.y)
+			table.remove(self.enemies, i)
+			if ship:hit(Config.ENEMY_DAMAGE) and ship.health <= 0 then
+				self.gameOver = true
+			end
+		end
+	end
+
+	-- Cannonballs move and hit.
+	for i = #self.cannonballs, 1, -1 do
+		local b = self.cannonballs[i]
+		b:update()
+		local hit = false
+		for j = #self.enemies, 1, -1 do
+			local e = self.enemies[j]
+			if Utils.dist(b.x, b.y, e.x, e.y) < (b.radius + e.radius) then
+				self:addExplosion(e.x, e.y)
+				table.remove(self.enemies, j)
+				self.score = self.score + 1
+				hit = true
+				break
+			end
+		end
+		if hit or b.dead then
+			table.remove(self.cannonballs, i)
+		end
+	end
+end
+
+-- ---------------------------------------------------------------------------
+-- Rendering
+-- ---------------------------------------------------------------------------
+
+function GameScene:cameraOrigin()
+	local camX = Utils.clamp(self.ship.x - Config.SCREEN_W / 2, 0, Config.WORLD_W - Config.SCREEN_W)
+	local camY = Utils.clamp(self.ship.y - Config.SCREEN_H / 2, 0, Config.WORLD_H - Config.SCREEN_H)
+	return math.floor(camX), math.floor(camY)
+end
+
+function GameScene:render()
+	local camX, camY = self:cameraOrigin()
+
+	-- ---- World space (camera offset applied) ----
+	gfx.setDrawOffset(-camX, -camY)
+
+	self:drawWater(camX, camY)
+
+	-- Wake sits under the hulls.
+	self.ship.wake:update()
+
+	for _, e in ipairs(self.enemies) do e:draw() end
+	for _, b in ipairs(self.cannonballs) do b:draw() end
+	self.ship:draw()
+
+	-- Explosions on top, then prune spent systems (age cap as a safety net).
+	for i = #self.explosions, 1, -1 do
+		local ex = self.explosions[i]
+		ex.sys:update()
+		ex.age = ex.age + 1
+		if #ex.sys:getParticles() == 0 or ex.age > 120 then
+			ex.sys:remove()
+			table.remove(self.explosions, i)
+		end
+	end
+
+	-- ---- Screen space (HUD) ----
+	gfx.setDrawOffset(0, 0)
+	self:drawTargetingLine(camX, camY)
+	self:drawOffscreenArrows(camX, camY)
+	self:drawHUD()
+	if self.gameOver then self:drawGameOver() end
+end
+
+function GameScene:drawWater(camX, camY)
+	local g = Config.WATER_GRID
+	local startX = math.floor(camX / g) * g
+	local startY = math.floor(camY / g) * g
+	gfx.setColor(gfx.kColorBlack)
+	for gx = startX, camX + Config.SCREEN_W + g, g do
+		for gy = startY, camY + Config.SCREEN_H + g, g do
+			-- Little staggered wavelets for a sea texture.
+			gfx.fillRect(gx, gy, 2, 1)
+			gfx.fillRect(gx + g / 2, gy + g / 2, 2, 1)
+		end
+	end
+
+	-- Map boundary so the edge of the world is legible.
+	gfx.setLineWidth(4)
+	gfx.drawRect(0, 0, Config.WORLD_W, Config.WORLD_H)
+end
+
+function GameScene:drawTargetingLine(camX, camY)
+	if not (self.chargingSide and self.target) then return end
+	local sx = self.ship.x - camX
+	local sy = self.ship.y - camY
+	local tx = self.target.x - camX
+	local ty = self.target.y - camY
+	gfx.setColor(gfx.kColorBlack)
+	gfx.setLineWidth(1)
+	Utils.drawDottedLine(sx, sy, tx, ty, 4, 4)
+	-- Reticle around the locked target.
+	gfx.drawCircleAtPoint(tx, ty, self.target.radius + 6)
+	gfx.drawCircleAtPoint(tx, ty, self.target.radius + 2)
+end
+
+function GameScene:drawOffscreenArrows(camX, camY)
+	local margin = 14
+	local cx, cy = Config.SCREEN_W / 2, Config.SCREEN_H / 2
+	gfx.setColor(gfx.kColorBlack)
+	for _, e in ipairs(self.enemies) do
+		local sx = e.x - camX
+		local sy = e.y - camY
+		if sx < 0 or sx > Config.SCREEN_W or sy < 0 or sy > Config.SCREEN_H then
+			local ang = Utils.angleTo(cx, cy, sx, sy)
+			local px = Utils.clamp(sx, margin, Config.SCREEN_W - margin)
+			local py = Utils.clamp(sy, margin, Config.SCREEN_H - margin)
+			self:drawArrow(px, py, ang, 9)
+		end
+	end
+end
+
+function GameScene:drawArrow(px, py, angleDeg, size)
+	local hx, hy = Utils.heading(angleDeg)
+	-- perpendicular
+	local rx, ry = -hy, hx
+	local tipx, tipy = px + hx * size, py + hy * size
+	local b1x, b1y = px - hx * size * 0.4 + rx * size * 0.6, py - hy * size * 0.4 + ry * size * 0.6
+	local b2x, b2y = px - hx * size * 0.4 - rx * size * 0.6, py - hy * size * 0.4 - ry * size * 0.6
+	gfx.fillTriangle(tipx, tipy, b1x, b1y, b2x, b2y)
+end
+
+function GameScene:drawHUD()
+	gfx.setImageDrawMode(gfx.kDrawModeCopy)
+
+	-- Health pips (top-left)
+	for i = 1, Config.SHIP_MAX_HEALTH do
+		local x = 6 + (i - 1) * 12
+		gfx.setColor(gfx.kColorBlack)
+		if i <= self.ship.health then
+			gfx.fillRect(x, 6, 9, 9)
+		else
+			gfx.drawRect(x, 6, 9, 9)
+		end
+	end
+
+	-- Score (top-right)
+	gfx.drawText("* " .. self.score, Config.SCREEN_W - 60, 6)
+
+	-- Speed gauge (bottom-left)
+	local gw, gh = 90, 8
+	local gx, gy = 6, Config.SCREEN_H - 16
+	gfx.drawText("SPEED", gx, gy - 16)
+	gfx.drawRect(gx, gy, gw, gh)
+	local fill = (self.ship.speed / Config.SHIP_MAX_SPEED) * (gw - 2)
+	gfx.fillRect(gx + 1, gy + 1, fill, gh - 2)
+
+	-- Charge meter (bottom-center) while charging
+	if self.chargingSide then
+		local cw = 120
+		local cx = (Config.SCREEN_W - cw) / 2
+		local cy = Config.SCREEN_H - 16
+		gfx.drawText(self.chargingSide == "port" and "PORT" or "STARBOARD", cx, cy - 16)
+		gfx.drawRect(cx, cy, cw, 8)
+		gfx.fillRect(cx + 1, cy + 1, (cw - 2) * self.charge, 6)
+	end
+end
+
+function GameScene:drawGameOver()
+	gfx.setColor(gfx.kColorBlack)
+	gfx.fillRect(60, 80, Config.SCREEN_W - 120, 80)
+	gfx.setColor(gfx.kColorWhite)
+	gfx.drawRect(62, 82, Config.SCREEN_W - 124, 76)
+	gfx.setImageDrawMode(gfx.kDrawModeFillWhite)
+	gfx.drawTextAligned("SUNK!", Config.SCREEN_W / 2, 96, kTextAlignment.center)
+	gfx.drawTextAligned("Plunder: " .. self.score, Config.SCREEN_W / 2, 116, kTextAlignment.center)
+	gfx.drawTextAligned("Ⓐ to set sail again", Config.SCREEN_W / 2, 134, kTextAlignment.center)
+	gfx.setImageDrawMode(gfx.kDrawModeCopy)
+end
