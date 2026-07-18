@@ -1,0 +1,57 @@
+name: Build Cannonade
+
+on:
+  push:
+    branches: [ main ]
+    tags: [ 'v*' ]
+  pull_request:
+  workflow_dispatch:
+
+# So the release step can create releases/upload assets.
+permissions:
+  contents: write
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          # If you track Noble as a submodule this pulls it; the fetch step
+          # below is a fallback so the build works either way.
+          submodules: recursive
+
+      - name: Fetch engine + libraries
+        run: bash tools/fetch-deps.sh
+
+      - name: Install Playdate SDK
+        id: playdate
+        uses: pd-rs/get-playdate-sdk@0.4
+        with:
+          version: latest   # installs the newest SDK; @0.4 is the action version
+
+      - name: Report toolchain
+        run: |
+          echo "SDK: ${{ steps.playdate.outputs.version }} at $PLAYDATE_SDK_PATH"
+          pdc --version
+
+      - name: Compile
+        # pdc reads source/ (main.lua + pdxinfo) and emits Cannonade.pdx
+        run: pdc -sdkpath "$PLAYDATE_SDK_PATH" source Cannonade.pdx
+
+      - name: Package
+        run: zip -r Cannonade.pdx.zip Cannonade.pdx
+
+      - name: Upload build artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: Cannonade-pdx
+          path: Cannonade.pdx.zip
+          if-no-files-found: error
+
+      - name: Publish release
+        if: startsWith(github.ref, 'refs/tags/v')
+        uses: softprops/action-gh-release@v2
+        with:
+          files: Cannonade.pdx.zip

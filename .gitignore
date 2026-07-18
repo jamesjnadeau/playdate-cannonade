@@ -1,0 +1,8 @@
+# Playdate build output
+*.pdx/
+*.pdx.zip
+
+# Editor / OS cruft
+.DS_Store
+.vscode/*
+!.vscode/settings.json.example

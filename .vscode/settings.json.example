@@ -1,0 +1,7 @@
+{
+  "// note": "Copy this to .vscode/settings.json and set your SDK path.",
+  "playdate.sdkPath": "/Users/you/Developer/PlaydateSDK",
+  "files.associations": {
+    "*.lua": "lua"
+  }
+}
