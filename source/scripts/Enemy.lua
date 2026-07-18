@@ -35,7 +35,10 @@ function Enemy:init(x, y, heading)
 	self.radius = Config.ENEMY_RADIUS
 	self.alive = true
 
-	local L, B = 16, 8
+	-- local L, B = 16, 8
+	-- self.hull = { L, 0,  -L * 0.7, B,  -L, B * 0.55,  -L, -B * 0.55,  -L * 0.7, -B }
+
+	local L, B = Config.ENEMY_LENGTH, Config.ENEMY_BEAM
 	self.hull = { L, 0,  -L * 0.7, B,  -L, B * 0.55,  -L, -B * 0.55,  -L * 0.7, -B }
 end
 
