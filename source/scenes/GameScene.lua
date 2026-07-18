@@ -70,7 +70,7 @@ end
 function GameScene:resetGame(sceneProperties)
 	sceneProperties = sceneProperties or {}
 	clearAllParticles()
-	self.ship = Player(Config.WORLD_W / 2, Config.WORLD_H / 2)
+	self.ship = Player(0, 0)
 	self.enemies = {}
 	self.cannonballs = {}
 	self.explosions = {}
@@ -220,8 +220,8 @@ function GameScene:spawnEnemy()
 	local ang = math.random() * 360
 	local ax, ay = Utils.heading(ang)
 	local dist = 250 + math.random() * 120 -- just beyond the screen's corner
-	local ex = Utils.clamp(ship.x + ax * dist, 0, Config.WORLD_W)
-	local ey = Utils.clamp(ship.y + ay * dist, 0, Config.WORLD_H)
+	local ex = ship.x + ax * dist
+	local ey = ship.y + ay * dist
 	local facing = Utils.angleTo(ex, ey, ship.x, ship.y)
 	self.enemies[#self.enemies + 1] = Enemy(ex, ey, facing)
 	return true
@@ -324,9 +324,11 @@ end
 -- Rendering
 -- ---------------------------------------------------------------------------
 
+-- The world is infinite and player-centered: the camera always keeps the
+-- ship dead-center on screen rather than clamping to any world bound.
 function GameScene:cameraOrigin()
-	local camX = Utils.clamp(self.ship.x - Config.SCREEN_W / 2, 0, Config.WORLD_W - Config.SCREEN_W)
-	local camY = Utils.clamp(self.ship.y - Config.SCREEN_H / 2, 0, Config.WORLD_H - Config.SCREEN_H)
+	local camX = self.ship.x - Config.SCREEN_W / 2
+	local camY = self.ship.y - Config.SCREEN_H / 2
 	return math.floor(camX), math.floor(camY)
 end
 
@@ -378,10 +380,6 @@ function GameScene:drawWater(camX, camY)
 			gfx.fillRect(gx + g / 2, gy + g / 2, 2, 1)
 		end
 	end
-
-	-- Map boundary so the edge of the world is legible.
-	gfx.setLineWidth(4)
-	gfx.drawRect(0, 0, Config.WORLD_W, Config.WORLD_H)
 end
 
 function GameScene:drawTargetingLine(camX, camY)
@@ -447,18 +445,59 @@ function GameScene:drawAimLines(sx, sy, tx, ty)
 	gfx.setLineWidth(1)
 end
 
+-- Off-screen enemies are bucketed by on-screen direction so a cluster of
+-- enemies coming from the same side draws as one (larger) arrow with a count
+-- badge instead of a stack of overlapping ones. Each group also surfaces the
+-- most urgent teleport countdown among its members (see Enemy:updateLeash),
+-- so the player gets advance warning before an enemy relocates.
 function GameScene:drawOffscreenArrows(camX, camY)
-	local margin = 14
+	local margin = Config.OFFSCREEN_INDICATOR_MARGIN
+	local groupWindow = Config.OFFSCREEN_INDICATOR_GROUP_ANGLE
+	local size = Config.OFFSCREEN_INDICATOR_SIZE
 	local cx, cy = Config.SCREEN_W / 2, Config.SCREEN_H / 2
-	gfx.setColor(gfx.kColorBlack)
+	local reach = Config.SCREEN_W + Config.SCREEN_H -- far enough to always clamp onto an edge
+
+	local groups = {}
 	for _, e in ipairs(self.enemies) do
 		local sx = e.x - camX
 		local sy = e.y - camY
 		if sx < 0 or sx > Config.SCREEN_W or sy < 0 or sy > Config.SCREEN_H then
 			local ang = Utils.angleTo(cx, cy, sx, sy)
-			local px = Utils.clamp(sx, margin, Config.SCREEN_W - margin)
-			local py = Utils.clamp(sy, margin, Config.SCREEN_H - margin)
-			self:drawArrow(px, py, ang, 9)
+			local hx, hy = Utils.heading(ang)
+
+			local group = nil
+			for _, g in ipairs(groups) do
+				if math.abs(Utils.angleDiff(g.angle, ang)) <= groupWindow / 2 then
+					group = g
+					break
+				end
+			end
+			if not group then
+				group = { sumX = 0, sumY = 0, count = 0, angle = ang, warning = nil }
+				groups[#groups + 1] = group
+			end
+
+			group.sumX = group.sumX + hx
+			group.sumY = group.sumY + hy
+			group.count = group.count + 1
+			group.angle = Utils.angleTo(0, 0, group.sumX, group.sumY)
+			if e.teleportWarning and (not group.warning or e.teleportWarning < group.warning) then
+				group.warning = e.teleportWarning
+			end
+		end
+	end
+
+	gfx.setColor(gfx.kColorBlack)
+	for _, g in ipairs(groups) do
+		local hx, hy = Utils.heading(g.angle)
+		local px = Utils.clamp(cx + hx * reach, margin, Config.SCREEN_W - margin)
+		local py = Utils.clamp(cy + hy * reach, margin, Config.SCREEN_H - margin)
+		self:drawArrow(px, py, g.angle, size)
+		if g.count > 1 then
+			gfx.drawTextAligned(tostring(g.count), px, py - size - 12, kTextAlignment.center)
+		end
+		if g.warning then
+			gfx.drawTextAligned(tostring(math.ceil(g.warning)), px, py + size + 2, kTextAlignment.center)
 		end
 	end
 end

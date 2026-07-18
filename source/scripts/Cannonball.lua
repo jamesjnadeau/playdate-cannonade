@@ -26,9 +26,6 @@ function Cannonball:update()
 	self.y = self.y + self.vy * dt
 	self.life = self.life - dt
 	if self.life <= 0 then self.dead = true end
-	if self.x < 0 or self.y < 0 or self.x > Config.WORLD_W or self.y > Config.WORLD_H then
-		self.dead = true
-	end
 end
 
 function Cannonball:draw()

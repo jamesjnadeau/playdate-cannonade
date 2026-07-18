@@ -88,8 +88,8 @@ function Player:update(windDirection, windSpeed)
 	end
 
 	local hx, hy = Utils.heading(self.heading)
-	self.x = Utils.clamp(self.x + hx * self.speed * dt, 0, Config.WORLD_W)
-	self.y = Utils.clamp(self.y + hy * self.speed * dt, 0, Config.WORLD_H)
+	self.x = self.x + hx * self.speed * dt
+	self.y = self.y + hy * self.speed * dt
 
 	if self.speed > 8 then
 		local sx, sy = self:sternPosition()
@@ -109,11 +109,16 @@ end
 
 function Player:drawSail()
 	local hx, hy = Utils.heading(self:sailAngle())
+	local tipX, tipY = self.x + hx * Config.SAIL_LENGTH, self.y + hy * Config.SAIL_LENGTH
 
 	gfx.setColor(gfx.kColorBlack)
 	gfx.setLineWidth(2)
-	gfx.drawLine(self.x, self.y, self.x + hx * Config.SAIL_LENGTH, self.y + hy * Config.SAIL_LENGTH)
+	gfx.drawLine(self.x, self.y, tipX, tipY)
+
+	-- Main line (mainsheet): runs from the stern to the end of the boom.
+	local sx, sy = self:sternPosition()
 	gfx.setLineWidth(1)
+	gfx.drawLine(sx, sy, tipX, tipY)
 end
 
 function Player:draw()

@@ -12,9 +12,8 @@ Config.REFRESH    = 30          -- we lock to 30fps and use a fixed timestep
 Config.DT         = 1 / 30
 
 -- World ---------------------------------------------------------------------
--- The playable sea is much larger than the screen; the camera scrolls over it.
-Config.WORLD_W    = 6000
-Config.WORLD_H    = 6000
+-- The sea is infinite and all coordinates are player-centered: the camera
+-- always centers on the ship and nothing clamps its position.
 Config.WATER_GRID = 32          -- spacing of the drawn water speckle grid
 
 
@@ -23,22 +22,23 @@ Config.WATER_GRID = 32          -- spacing of the drawn water speckle grid
 -- Ship.explosionConfig is the default every ship inherits; a subclass can
 -- overwrite the whole table or just a field to get its own look.
 Config.EXPLOSION = {
-	mode     = Particles.modes.DISAPPEAR,
+	mode     = Particles.modes.DECAY,
+	decay    = 0.5,
 	size     = { 2, 5 },
 	speed    = { 2, 9 },      -- pdParticles speed is per-frame
-	spread   = { 0, 359 },
-	lifespan = { 4, 9 },
+	spread   = { 0, 100 },
+	lifespan = { 2, 3 },
 	color    = gfx.kColorBlack,
-	count    = 22,
+	count    = 10,
 	maxAge   = 120,           -- frames; safety net if particles never fully decay
 }
 
 -- Ship ----------------------------------------------------------------------
-Config.SHIP_MAX_SPEED     = 130     -- pixels / second
-Config.SHIP_DEFAULT_SPEED = 60      -- guaranteed baseline forward speed regardless of sail/wind
-Config.SHIP_ACCEL        = 90       -- pixels / second, added per second while easing toward target speed
+Config.SHIP_MAX_SPEED     = 180     -- pixels / second
+Config.SHIP_DEFAULT_SPEED = 20      -- guaranteed baseline forward speed regardless of sail/wind
+Config.SHIP_ACCEL        = 30       -- pixels / second, added per second while easing toward target speed
 Config.SHIP_TURN_SCALE = 0.55   -- crank-degrees -> heading-degrees multiplier
-Config.SHIP_COLLIDE_RADIUS    = 12      -- collision radius
+Config.SHIP_COLLIDE_RADIUS = 15      -- collision radius
 Config.SHIP_MAX_HEALTH = 5
 Config.SHIP_LENGTH    = 15      -- half-length of hull when drawn, default 22
 Config.SHIP_BEAM      = 4       -- half-width of hull when drawn
@@ -66,6 +66,14 @@ Config.ENEMY_DAMAGE     = 1
 Config.ENEMY_LENGTH    = 20      -- half-length of hull when drawn, default 22
 Config.ENEMY_BEAM      = 8       -- half-width of hull when drawn
 
+-- With an infinite world an enemy that loses the player would otherwise
+-- chase forever; past ENEMY_MAX_DISTANCE it's flagged for relocation, warned
+-- for ENEMY_TELEPORT_WARN_TIME seconds (see the off-screen indicator), then
+-- teleported to the opposite side of the player at the same distance so it
+-- stays an active threat instead of trailing off into the distance.
+Config.ENEMY_MAX_DISTANCE      = 900
+Config.ENEMY_TELEPORT_WARN_TIME = 3     -- seconds of countdown warning before relocation
+
 -- Difficulty ramp: spawn interval shrinks from START to FLOOR over RAMP seconds
 Config.SPAWN_INTERVAL_START = 2.6
 Config.SPAWN_INTERVAL_FLOOR = 0.55
@@ -84,6 +92,14 @@ Config.AIM_LINE_LENGTH  = 18    -- length (px) of the converging aim-indicator l
 Config.AIM_LINE_WIDTH   = 2     -- stroke thickness (px) of the aim-indicator lines
 Config.NO_TARGET_MARK_SIZE   = 16 -- pixel height of the "?" shown when charging with nothing in range
 Config.NO_TARGET_MARK_OFFSET = 30 -- distance (px) from the ship's center to that mark
+
+-- HUD -------------------------------------------------------------------
+-- Off-screen enemy indicators: enemies whose on-screen directions fall
+-- within OFFSCREEN_INDICATOR_GROUP_ANGLE of each other share a single arrow
+-- (with a count badge) instead of stacking separate ones.
+Config.OFFSCREEN_INDICATOR_MARGIN      = 20  -- px inset from the screen edge
+Config.OFFSCREEN_INDICATOR_SIZE        = 14  -- pixel size of the arrow glyph
+Config.OFFSCREEN_INDICATOR_GROUP_ANGLE = 18  -- degrees; enemies this close together share one indicator
 
 -- Levels ----------------------------------------------------------------
 -- Level N clears once the player has defeated N * LEVEL_ENEMY_STEP enemies
