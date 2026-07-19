@@ -83,7 +83,7 @@ Config.UPGRADES = {
 		description = "Shortens the delay between autofire cannon shots. Requires the Autofire Cannon.",
 		configKey = "AUTOFIRE_CANNON_DELAY",
 		delta = -Config.AUTOFIRE_CANNON_DELAY_STEP,
-		minValue = 0.1,
+		minValue = 0.5,
 		available = function() return Config.AUTOFIRE_CANNON_UNLOCKED > 0 end,
 		format = function(v) return string.format("%.2f", v) .. " s" end,
 	},
