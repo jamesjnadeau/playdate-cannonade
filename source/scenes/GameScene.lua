@@ -762,47 +762,66 @@ function GameScene:drawOffscreenArrows(camX, camY)
 		end
 	end
 
+	-- A flashing group blinks fully on/off at Config.OFFSCREEN_INDICATOR_FLASH_PERIOD
+	-- (see shouldFlashOffscreenIndicator) rather than drawing dimmer -- there's
+	-- no dimming on Playdate's 1-bit display, so on/off is the whole toolbox.
+	local flashVisible = math.floor(self.elapsed / (Config.OFFSCREEN_INDICATOR_FLASH_PERIOD / 2)) % 2 == 0
+
 	gfx.setColor(gfx.kColorBlack)
 	for _, g in ipairs(groups) do
-		local hx, hy = Utils.heading(g.angle)
+		if flashVisible or not self:shouldFlashOffscreenIndicator(g) then
+			local hx, hy = Utils.heading(g.angle)
 
-		local px = Utils.clamp(cx + hx * reach, margin, Config.SCREEN_W - margin)
-		local py = Utils.clamp(cy + hy * reach, margin, Config.SCREEN_H - margin)
-		local ex = Utils.clamp(cx + hx * reach, 0, Config.SCREEN_W)
-		local ey = Utils.clamp(cy + hy * reach, 0, Config.SCREEN_H)
+			local px = Utils.clamp(cx + hx * reach, margin, Config.SCREEN_W - margin)
+			local py = Utils.clamp(cy + hy * reach, margin, Config.SCREEN_H - margin)
+			local ex = Utils.clamp(cx + hx * reach, 0, Config.SCREEN_W)
+			local ey = Utils.clamp(cy + hy * reach, 0, Config.SCREEN_H)
 
-		-- A group's count replaces the arrow outright (the number alone is
-		-- clearer than trying to cram it inside a tiny triangle).
-		local labelHeight = size
-		local radius = size -- how far the indicator extends from px,py toward the edge
-		local countImg, countW, countH, countScale
-		if g.count > 1 then
-			countImg = gfx.imageWithText(tostring(g.count), 100, 100)
-			local iw, ih = countImg:getSize()
-			countScale = Config.OFFSCREEN_INDICATOR_COUNT_SIZE / ih
-			countW, countH = iw * countScale, ih * countScale
-			labelHeight = countH
-			radius = math.max(countW, countH) / 2
-		end
+			-- A group's count replaces the arrow outright (the number alone is
+			-- clearer than trying to cram it inside a tiny triangle).
+			local labelHeight = size
+			local radius = size -- how far the indicator extends from px,py toward the edge
+			local countImg, countW, countH, countScale
+			if g.count > 1 then
+				countImg = gfx.imageWithText(tostring(g.count), 100, 100)
+				local iw, ih = countImg:getSize()
+				countScale = Config.OFFSCREEN_INDICATOR_COUNT_SIZE / ih
+				countW, countH = iw * countScale, ih * countScale
+				labelHeight = countH
+				radius = math.max(countW, countH) / 2
+			end
 
-		-- Line starts at the indicator's outer edge (not its center) and
-		-- reaches the true screen edge when the nearest enemy in the group
-		-- is at Config.ENEMY_MAX_DISTANCE.
-		local fraction = Utils.clamp(g.minDist / Config.ENEMY_MAX_DISTANCE, 0, 1)
-		local startX, startY = px + hx * radius, py + hy * radius
-		local endX, endY = px + (ex - px) * fraction, py + (ey - py) * fraction
-		gfx.drawLine(startX, startY, endX, endY)
+			-- Line starts at the indicator's outer edge (not its center) and
+			-- reaches the true screen edge when the nearest enemy in the group
+			-- is at Config.ENEMY_MAX_DISTANCE.
+			local fraction = Utils.clamp(g.minDist / Config.ENEMY_MAX_DISTANCE, 0, 1)
+			local startX, startY = px + hx * radius, py + hy * radius
+			local endX, endY = px + (ex - px) * fraction, py + (ey - py) * fraction
+			gfx.drawLine(startX, startY, endX, endY)
 
-		if countImg then
-			gfx.setImageDrawMode(gfx.kDrawModeCopy)
-			countImg:drawScaled(px - countW / 2, py - countH / 2, countScale)
-		else
-			self:drawArrow(px, py, g.angle, size)
-		end
-		if g.warning then
-			gfx.drawTextAligned(tostring(math.ceil(g.warning)), px, py + labelHeight / 2 + 2, kTextAlignment.center)
+			if countImg then
+				gfx.setImageDrawMode(gfx.kDrawModeCopy)
+				countImg:drawScaled(px - countW / 2, py - countH / 2, countScale)
+			else
+				self:drawArrow(px, py, g.angle, size)
+			end
+			if g.warning then
+				gfx.drawTextAligned(tostring(math.ceil(g.warning)), px, py + labelHeight / 2 + 2, kTextAlignment.center)
+			end
 		end
 	end
+end
+
+-- Whether this off-screen indicator group should blink to draw the player's
+-- attention -- default: it's the last enemy left (nothing else to distract
+-- from, and worth making easy to find so a mop-up doesn't turn into a long
+-- search). Subclasses can override for their own attention-getting
+-- conditions -- see InstructionsScene, which replaces this with its own
+-- "target's been out of range too long" hint instead.
+---@param __group table unused in the base implementation; a group entry from drawOffscreenArrows
+---@return boolean
+function GameScene:shouldFlashOffscreenIndicator(__group)
+	return #self.enemies == 1
 end
 
 ---@param px number

@@ -134,6 +134,13 @@ function TestSceneFlow:testInstructionsStepsRequireBothDirectionsThenBackAtAnyPo
 	Noble.Input.fire("rightButtonUp")
 	lu.assertEquals(scene.step, InstructionsScene.STEP_BROADSIDE_LEFT)
 
+	-- Broadside steps require an in-range hit, not just a press -- see
+	-- testInstructionsBroadsideRequiresAnInRangeHit. GameScene:pickTarget is
+	-- a real-geometry method the mock replaces with "the first enemy, if
+	-- any" (see mock_game_scene.lua), so a stub entry stands in for "a
+	-- target is in range" here.
+	scene.enemies = { { x = 0, y = 0 } }
+
 	for _ = 1, Config.INSTRUCTIONS_BROADSIDE_PRESSES do
 		Noble.Input.fire("leftButtonDown")
 		Noble.Input.fire("leftButtonUp")
@@ -148,6 +155,42 @@ function TestSceneFlow:testInstructionsStepsRequireBothDirectionsThenBackAtAnyPo
 
 	Noble.Input.fire("BButtonDown") -- B still exits once every step is done
 	lu.assertEquals(currentClassName(), "TitleScene")
+end
+
+-- onBroadsideButtonDown only credits progress once pickTarget finds an
+-- in-range target -- a bare press with nothing in range earns nothing, and
+-- stepSubline/shouldFlashOffscreenIndicator escalate the on-screen hint the
+-- longer that stays true (see InstructionsScene:tickGame's outOfRangeSeconds
+-- tracking, simulated directly here rather than by calling :tickGame(),
+-- which would reach into real EnemyDummy/ship-coordinate territory the mock
+-- doesn't stand in for -- see mock_game_scene.lua's header).
+function TestSceneFlow:testInstructionsBroadsideRequiresAnInRangeHit()
+	Noble.Input.fire("downButtonDown")
+	Noble.Input.fire("AButtonDown")
+	local scene = Noble.currentScene()
+	scene.step = InstructionsScene.STEP_BROADSIDE_LEFT
+	scene.stepProgress = 0
+	scene.outOfRangeSeconds = 0
+
+	scene.enemies = {} -- nothing in range
+	Noble.Input.fire("leftButtonDown")
+	Noble.Input.fire("leftButtonUp")
+	lu.assertEquals(scene.stepProgress, 0)
+
+	scene.enemies = { { x = 0, y = 0 } } -- now something's in range
+	Noble.Input.fire("leftButtonDown")
+	Noble.Input.fire("leftButtonUp")
+	lu.assertEquals(scene.stepProgress, 1)
+
+	-- Below the hint threshold: a "get closer" nudge, not yet flashing.
+	scene.outOfRangeSeconds = 1
+	lu.assertEquals(scene:stepSubline(), InstructionsScene.OUT_OF_RANGE_MESSAGE)
+	lu.assertFalse(scene:shouldFlashOffscreenIndicator(nil))
+
+	-- Past the threshold: point at the (now flashing) off-screen indicator.
+	scene.outOfRangeSeconds = Config.INSTRUCTIONS_OUT_OF_RANGE_HINT_SECONDS
+	lu.assertEquals(scene:stepSubline(), InstructionsScene.OUT_OF_RANGE_HINT_MESSAGE)
+	lu.assertTrue(scene:shouldFlashOffscreenIndicator(nil))
 end
 
 function TestSceneFlow:testTitleSettingsToggleAndBack()

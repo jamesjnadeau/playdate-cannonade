@@ -12,15 +12,15 @@
 -- GameScene.current(), the shared D-pad input handler (copied verbatim from
 -- the real class -- it only touches
 -- self.ship/self.trimInput/self:beginCharge/self:releaseCharge, all stubbed
--- below), enemyTypes, spawnEnemy's cap/forced-type logic, and the tickGame
--- hook GameSceneMain/InstructionsScene layer their own level-clear/step-spawn
--- logic onto. Rendering
--- (:render/:drawHUD/:drawModeStatus/:drawGameOver) is a no-op -- this suite
--- checks scene transitions and state, not pixels. Note self.ship here is just
--- `{ steer = function() end }`, with no x/y/heading -- fine as long as no
--- test calls :update() (which nothing currently does), since that's the only
--- path that reaches InstructionsScene:spawnDummyTarget, the one place that'd
--- need real ship coordinates.
+-- below), pickTarget (a simplified stand-in, see below), enemyTypes,
+-- spawnEnemy's cap/forced-type logic, and the tickGame hook GameSceneMain/
+-- InstructionsScene layer their own level-clear/step-spawn logic onto.
+-- Rendering (:render/:drawHUD/:drawModeStatus/:drawGameOver) is a no-op --
+-- this suite checks scene transitions and state, not pixels. Note self.ship
+-- here is just `{ steer = function() end }`, with no x/y/heading -- fine as
+-- long as no test calls :update() (which nothing currently does), since
+-- that's the only path that reaches InstructionsScene:spawnDummyTarget, the
+-- one place that'd need real ship coordinates.
 
 GameScene = {}
 class("GameScene").extends(NobleScene)
@@ -121,6 +121,17 @@ function GameScene.buildSharedInputHandler(getScene)
 			if s then s:releaseCharge("starboard") end
 		end,
 	}
+end
+
+-- Real GameScene:pickTarget picks the nearest enemy on the given side by
+-- cross product against ship heading -- more geometry than these tests need.
+-- This just hands back the first enemy regardless of side/range, which is
+-- enough for InstructionsScene:onBroadsideButtonDown's tests: they simulate
+-- "in range" by seeding self.enemies with a stub table and "out of range" by
+-- leaving it empty.
+---@param __side string unused, see above
+function GameScene:pickTarget(__side)
+	return self.enemies[1]
 end
 
 function GameScene:beginCharge(side)

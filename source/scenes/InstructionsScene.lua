@@ -16,7 +16,8 @@ local gfx <const> = playdate.graphics
 
 ---@class InstructionsScene : GameScene
 ---@field step number index into InstructionsScene.prompts; STEP_DONE once finished
----@field stepProgress number generic counter for the current step -- seconds for the crank steps, a press count for the rest; reset to 0 by advanceStep
+---@field stepProgress number generic counter for the current step -- seconds for the crank steps, a scored-hit count for the broadside steps, a press count for the rest; reset to 0 by advanceStep
+---@field outOfRangeSeconds number seconds the broadside steps' target has been continuously out of range, see tickGame/onBroadsideButtonDown; reset to 0 by advanceStep
 InstructionsScene = class("InstructionsScene").extends(GameScene) or InstructionsScene
 
 -- "Forward"/"backward" just label the two signs of crank delta (positive vs
@@ -38,16 +39,32 @@ InstructionsScene.prompts = {
 	[InstructionsScene.STEP_BROADSIDE_RIGHT] = "Now press Right to charge a broadside",
 }
 
+-- Shown in place of the progress count once the broadside steps' target has
+-- been out of range for a while -- see stepSubline/Config.INSTRUCTIONS_OUT_OF_RANGE_HINT_SECONDS.
+InstructionsScene.OUT_OF_RANGE_MESSAGE = "Out of range -- close the distance!"
+InstructionsScene.OUT_OF_RANGE_HINT_MESSAGE = "Look for a triangle marker on your screen showing where the enemy is"
+
 ---@param sceneProperties? table
 function InstructionsScene:resetGame(sceneProperties)
 	InstructionsScene.super.resetGame(self, sceneProperties)
 	self.step = InstructionsScene.STEP_CRANK_FORWARD
 	self.stepProgress = 0
+	self.outOfRangeSeconds = 0
 end
 
 function InstructionsScene:advanceStep()
 	self.step = self.step + 1
 	self.stepProgress = 0
+	self.outOfRangeSeconds = 0
+end
+
+-- Which side the current step is teaching, or nil if it's not a broadside
+-- step at all -- shared by input handling, the dummy spawner, and rendering.
+---@return string? "port" | "starboard"
+function InstructionsScene:currentBroadsideSide()
+	if self.step == InstructionsScene.STEP_BROADSIDE_LEFT then return "port" end
+	if self.step == InstructionsScene.STEP_BROADSIDE_RIGHT then return "starboard" end
+	return nil
 end
 
 -- ---------------------------------------------------------------------------
@@ -143,10 +160,20 @@ function InstructionsScene:onTrimButtonDown(direction)
 	if self.stepProgress >= Config.INSTRUCTIONS_TRIM_PRESSES then self:advanceStep() end
 end
 
+-- Only credits progress once a hit is actually scored -- a bare press no
+-- longer counts. "Scored" here means the press finds a locked-on, in-range
+-- target (self:pickTarget, inherited from GameScene): charge/aim spread
+-- could still make the real shot miss, and this is a tutorial, not a
+-- marksmanship test, so being properly lined up is treated as good enough.
+-- Out of range presses earn nothing; tickGame's continuous range tracking
+-- below is what drives the "get closer" / "look for the triangle" hints so
+-- the player isn't left pressing into silence.
 ---@param side string "port" | "starboard"
 function InstructionsScene:onBroadsideButtonDown(side)
-	local wantStep = side == "port" and InstructionsScene.STEP_BROADSIDE_LEFT or InstructionsScene.STEP_BROADSIDE_RIGHT
-	if self.step ~= wantStep then return end
+	if self:currentBroadsideSide() ~= side then return end
+	if not self:pickTarget(side) then return end
+
+	self.outOfRangeSeconds = 0
 	self.stepProgress = self.stepProgress + 1
 	if self.stepProgress >= Config.INSTRUCTIONS_BROADSIDE_PRESSES then self:advanceStep() end
 end
@@ -158,25 +185,25 @@ end
 -- player always has something to lock onto while pressing that button.
 -- ---------------------------------------------------------------------------
 
--- Footprint the instruction card could occupy at its largest -- used as a
--- fixed exclusion zone for dummy placement below rather than matching
--- drawInstructionText's live box exactly, since spawn logic shouldn't need
--- to reach into rendering to size text.
+-- Footprint the instruction card could occupy at its largest (any prompt, or
+-- the out-of-range hint message, each wrapped to Config.INSTRUCTIONS_TEXT_BOX_MAX_WIDTH)
+-- -- used as a fixed exclusion zone for dummy placement below rather than
+-- matching drawInstructionText's live box exactly, since spawn logic
+-- shouldn't need to reach into rendering to size text.
 ---@return number width
 ---@return number height
 function InstructionsScene:instructionBoxFootprint()
-	local maxW, lineH = 0, 0
+	local maxWidth = Config.INSTRUCTIONS_TEXT_BOX_MAX_WIDTH
+	local promptW, promptH = 0, 0
 	for _, prompt in pairs(InstructionsScene.prompts) do
-		local w, h = gfx.getTextSize(prompt)
-		if w > maxW then maxW = w end
-		lineH = h
+		local w, h = gfx.getTextSizeForMaxWidth(prompt, maxWidth)
+		if w > promptW then promptW = w end
+		if h > promptH then promptH = h end
 	end
-	for _, sample in ipairs({ "9.9s / 9.9s", "9 / 9" }) do
-		local w = gfx.getTextSize(sample)
-		if w > maxW then maxW = w end
-	end
-	local boxW = maxW + Config.INSTRUCTIONS_TEXT_BOX_PADDING_X * 2
-	local boxH = lineH * 2 + Config.INSTRUCTIONS_TEXT_LINE_GAP + Config.INSTRUCTIONS_TEXT_BOX_PADDING_Y * 2
+	local hintW, hintH = gfx.getTextSizeForMaxWidth(InstructionsScene.OUT_OF_RANGE_HINT_MESSAGE, maxWidth)
+
+	local boxW = math.max(promptW, hintW) + Config.INSTRUCTIONS_TEXT_BOX_PADDING_X * 2
+	local boxH = promptH + Config.INSTRUCTIONS_TEXT_LINE_GAP + hintH + Config.INSTRUCTIONS_TEXT_BOX_PADDING_Y * 2
 	return boxW, boxH
 end
 
@@ -200,7 +227,7 @@ end
 
 function InstructionsScene:spawnDummyTarget()
 	local ship = self.ship
-	local side = self.step == InstructionsScene.STEP_BROADSIDE_LEFT and "port" or "starboard"
+	local side = self:currentBroadsideSide()
 	local ang = Utils.wrapDeg(ship.heading + (side == "starboard" and 90 or -90))
 	local dist = Config.INSTRUCTIONS_DUMMY_DISTANCE
 
@@ -222,25 +249,57 @@ end
 
 function InstructionsScene:tickGame()
 	InstructionsScene.super.tickGame(self)
-	local onBroadsideStep = self.step == InstructionsScene.STEP_BROADSIDE_LEFT
-		or self.step == InstructionsScene.STEP_BROADSIDE_RIGHT
-	if onBroadsideStep and #self.enemies == 0 then
-		self:spawnDummyTarget()
+
+	local side = self:currentBroadsideSide()
+	if not side then return end
+
+	if #self.enemies == 0 then self:spawnDummyTarget() end
+
+	-- Tracked every tick (not just on button press) so "continues to not be
+	-- in range" reflects actual elapsed time, even if the player pauses
+	-- between attempts -- see onBroadsideButtonDown/stepSubline/
+	-- shouldFlashOffscreenIndicator.
+	if self:pickTarget(side) then
+		self.outOfRangeSeconds = 0
+	else
+		self.outOfRangeSeconds = self.outOfRangeSeconds + Config.DT
 	end
+end
+
+-- Once the broadside target's been out of range long enough, blink its
+-- off-screen indicator (see GameScene:drawOffscreenArrows) instead of the
+-- base "last enemy left" rule -- with only ever one dummy alive, that base
+-- rule would be true (and so flashing) the instant it goes off-screen at
+-- all, well before the hint is meant to kick in.
+---@param __group table unused -- the hint isn't tied to which group, just whether the current step's target has been out of range long enough
+---@return boolean
+function InstructionsScene:shouldFlashOffscreenIndicator(__group)
+	return self.outOfRangeSeconds >= Config.INSTRUCTIONS_OUT_OF_RANGE_HINT_SECONDS
 end
 
 -- ---------------------------------------------------------------------------
 -- Rendering
 -- ---------------------------------------------------------------------------
 
+-- The second line under the current step's prompt: normally a progress
+-- count, but on a broadside step with the target out of range, this swaps to
+-- a "get closer" nudge and then (past Config.INSTRUCTIONS_OUT_OF_RANGE_HINT_SECONDS)
+-- a pointer at the flashing off-screen indicator -- see tickGame/
+-- shouldFlashOffscreenIndicator.
 ---@return string
-function InstructionsScene:stepProgressText()
-	if self.step == InstructionsScene.STEP_CRANK_FORWARD or self.step == InstructionsScene.STEP_CRANK_BACKWARD then
+function InstructionsScene:stepSubline()
+	local side = self:currentBroadsideSide()
+	if side then
+		if self.outOfRangeSeconds >= Config.INSTRUCTIONS_OUT_OF_RANGE_HINT_SECONDS then
+			return InstructionsScene.OUT_OF_RANGE_HINT_MESSAGE
+		elseif self.outOfRangeSeconds > 0 then
+			return InstructionsScene.OUT_OF_RANGE_MESSAGE
+		end
+		return string.format("%d / %d", self.stepProgress, Config.INSTRUCTIONS_BROADSIDE_PRESSES)
+	elseif self.step == InstructionsScene.STEP_CRANK_FORWARD or self.step == InstructionsScene.STEP_CRANK_BACKWARD then
 		return string.format("%.1fs / %.1fs", self.stepProgress, Config.INSTRUCTIONS_CRANK_SECONDS)
 	elseif self.step == InstructionsScene.STEP_TRIM_UP or self.step == InstructionsScene.STEP_TRIM_DOWN then
 		return string.format("%d / %d", self.stepProgress, Config.INSTRUCTIONS_TRIM_PRESSES)
-	elseif self.step == InstructionsScene.STEP_BROADSIDE_LEFT or self.step == InstructionsScene.STEP_BROADSIDE_RIGHT then
-		return string.format("%d / %d", self.stepProgress, Config.INSTRUCTIONS_BROADSIDE_PRESSES)
 	end
 	return ""
 end
@@ -248,23 +307,27 @@ end
 -- Drawn top-right, above the ship (which -- like every GameScene -- sits
 -- camera-locked at screen center), so the water, wake, and practice dummy
 -- stay visible underneath while the player works through each step. The
--- prompt/progress pair sits on a white rounded-rect card (sized to fit
--- whichever text is currently longest) so it stays legible over the water
--- instead of floating bare -- see Config.INSTRUCTIONS_TEXT_BOX_*.
+-- prompt/subline pair sits on a white rounded-rect card (sized to fit
+-- whichever text is currently longest, each line wrapped to
+-- Config.INSTRUCTIONS_TEXT_BOX_MAX_WIDTH since the out-of-range hint is long)
+-- so it stays legible over the water instead of floating bare -- see
+-- Config.INSTRUCTIONS_TEXT_BOX_*.
 function InstructionsScene:drawInstructionText()
 	local prompt = InstructionsScene.prompts[self.step] or "You're ready to sail!"
-	local progress = InstructionsScene.prompts[self.step] and self:stepProgressText() or nil
+	local subline = InstructionsScene.prompts[self.step] and self:stepSubline() or nil
 
+	local maxWidth = Config.INSTRUCTIONS_TEXT_BOX_MAX_WIDTH
 	local padX = Config.INSTRUCTIONS_TEXT_BOX_PADDING_X
 	local padY = Config.INSTRUCTIONS_TEXT_BOX_PADDING_Y
 	local lineGap = Config.INSTRUCTIONS_TEXT_LINE_GAP
 
-	local promptW, promptH = gfx.getTextSize(prompt)
+	local promptW, promptH = gfx.getTextSizeForMaxWidth(prompt, maxWidth)
 	local boxW, boxH = promptW, promptH
-	if progress then
-		local progressW, progressH = gfx.getTextSize(progress)
-		boxW = math.max(boxW, progressW)
-		boxH = boxH + lineGap + progressH
+	local sublineW, sublineH = 0, 0
+	if subline then
+		sublineW, sublineH = gfx.getTextSizeForMaxWidth(subline, maxWidth)
+		boxW = math.max(boxW, sublineW)
+		boxH = boxH + lineGap + sublineH
 	end
 	boxW = boxW + padX * 2
 	boxH = boxH + padY * 2
@@ -272,7 +335,6 @@ function InstructionsScene:drawInstructionText()
 	local boxX = Config.SCREEN_W - Config.INSTRUCTIONS_TEXT_BOX_MARGIN_RIGHT - boxW
 	local boxY = Config.INSTRUCTIONS_TEXT_BOX_TOP
 	local radius = Config.INSTRUCTIONS_TEXT_BOX_RADIUS
-	local textCx = boxX + boxW / 2
 
 	gfx.setColor(gfx.kColorWhite)
 	gfx.fillRoundRect(boxX, boxY, boxW, boxH, radius)
@@ -280,10 +342,11 @@ function InstructionsScene:drawInstructionText()
 	gfx.drawRoundRect(boxX, boxY, boxW, boxH, radius)
 
 	gfx.setImageDrawMode(gfx.kDrawModeCopy)
+	local textX = boxX + padX
 	local textY = boxY + padY
-	gfx.drawTextAligned(prompt, textCx, textY, kTextAlignment.center)
-	if progress then
-		gfx.drawTextAligned(progress, textCx, textY + promptH + lineGap, kTextAlignment.center)
+	gfx.drawTextInRect(prompt, textX, textY, promptW, promptH, nil, nil, kTextAlignment.center)
+	if subline then
+		gfx.drawTextInRect(subline, textX, textY + promptH + lineGap, sublineW, sublineH, nil, nil, kTextAlignment.center)
 	end
 
 	gfx.drawTextAligned("Ⓑ to exit", Config.SCREEN_W / 2, Config.SCREEN_H - 16, kTextAlignment.center)

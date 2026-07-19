@@ -132,12 +132,19 @@ clears once the player actually performs *that* direction enough — see
   cranking that sign of delta (no discrete "press" to count, see
   `InstructionsScene:onCranked`).
 - Up/Down steps: `INSTRUCTIONS_TRIM_PRESSES` presses of that specific button.
-- Left/Right steps: `INSTRUCTIONS_BROADSIDE_PRESSES` presses of that specific
-  button. A stationary, harmless `EnemyDummy` (can't move, ram damage is 0)
-  spawns on the side the current step is teaching, at
-  `INSTRUCTIONS_DUMMY_DISTANCE`; if destroyed, a fresh one immediately takes
-  its place (see `InstructionsScene:tickGame`/`spawnDummyTarget`) so there's
-  always something to aim the button being taught at.
+- Left/Right steps: `INSTRUCTIONS_BROADSIDE_PRESSES` scored hits with that
+  specific button — a press only counts if `pickTarget` finds an in-range
+  target (see `InstructionsScene:onBroadsideButtonDown`), not just any press.
+  A stationary, harmless `EnemyDummy` (can't move, ram damage is 0) spawns on
+  the side the current step is teaching, at `INSTRUCTIONS_DUMMY_DISTANCE`; if
+  destroyed, a fresh one immediately takes its place (see
+  `InstructionsScene:tickGame`/`spawnDummyTarget`) so there's always
+  something to aim the button being taught at. If that target stays out of
+  range for `INSTRUCTIONS_OUT_OF_RANGE_HINT_SECONDS` (tracked continuously in
+  `tickGame`, default 5s), the hint text escalates from "get closer" to
+  pointing at the target's off-screen indicator, which starts flashing (see
+  `InstructionsScene:shouldFlashOffscreenIndicator`, overriding
+  `GameScene`'s default rule of flashing whenever only one enemy is left).
 
 - **Reached from:** `TitleScene` ("Instructions").
 - **Controls:** real `GameScene` ship controls throughout (crank steers,

@@ -153,6 +153,9 @@ Config.OFFSCREEN_INDICATOR_MARGIN      = 75  -- px inset from the screen edge
 Config.OFFSCREEN_INDICATOR_SIZE        = 14  -- pixel size of the arrow glyph
 Config.OFFSCREEN_INDICATOR_GROUP_ANGLE = 18  -- degrees; enemies this close together share one indicator
 Config.OFFSCREEN_INDICATOR_COUNT_SIZE  = 24  -- pixel height of the group count text
+-- Full on/off blink cycle (seconds) for an indicator flagged by
+-- GameScene:shouldFlashOffscreenIndicator -- see drawOffscreenArrows.
+Config.OFFSCREEN_INDICATOR_FLASH_PERIOD = 0.4
 
 -- Toggled from SettingsScene (reached from the title screen); all default to visible.
 Config.HUD_SHOW_WIND_SPEED     = true
@@ -213,18 +216,23 @@ Config.TITLE_MENU_RISE_DURATION = 1.5  -- seconds for the rise-in animation
 -- enough times (button presses) -- see InstructionsScene.
 Config.INSTRUCTIONS_CRANK_SECONDS = 2       -- seconds spent actively cranking one direction to clear that crank step
 Config.INSTRUCTIONS_TRIM_PRESSES = 3        -- presses of Up (or Down) to clear that trim step
-Config.INSTRUCTIONS_BROADSIDE_PRESSES = 3   -- presses of Left (or Right) to clear that broadside step
+Config.INSTRUCTIONS_BROADSIDE_PRESSES = 3   -- in-range presses of Left (or Right) to clear that broadside step -- see InstructionsScene:onBroadsideButtonDown
 Config.INSTRUCTIONS_DUMMY_DISTANCE = 120    -- px from the ship the practice dummy spawns at during the broadside steps
+-- How long the broadside steps' target can sit continuously out of range
+-- before the hint escalates from "get closer" to pointing at the flashing
+-- off-screen indicator -- see InstructionsScene:tickGame/stepSubline.
+Config.INSTRUCTIONS_OUT_OF_RANGE_HINT_SECONDS = 5
 
 -- White rounded-rect card the current step's prompt/progress text is drawn
 -- on, so it stays readable over the water/ship instead of floating bare --
 -- see InstructionsScene:drawInstructionText.
-Config.INSTRUCTIONS_TEXT_BOX_TOP          = 8  -- px from the top of the screen to the box
-Config.INSTRUCTIONS_TEXT_BOX_MARGIN_RIGHT = 8  -- px from the right of the screen to the box
-Config.INSTRUCTIONS_TEXT_BOX_PADDING_X  = 10  -- px horizontal padding inside the box
-Config.INSTRUCTIONS_TEXT_BOX_PADDING_Y  = 6   -- px vertical padding inside the box
-Config.INSTRUCTIONS_TEXT_BOX_RADIUS     = 8   -- corner radius (px)
-Config.INSTRUCTIONS_TEXT_LINE_GAP       = 2   -- px gap between the prompt and progress lines
+Config.INSTRUCTIONS_TEXT_BOX_TOP          = 8   -- px from the top of the screen to the box
+Config.INSTRUCTIONS_TEXT_BOX_MARGIN_RIGHT = 8   -- px from the right of the screen to the box
+Config.INSTRUCTIONS_TEXT_BOX_PADDING_X    = 10  -- px horizontal padding inside the box
+Config.INSTRUCTIONS_TEXT_BOX_PADDING_Y    = 6   -- px vertical padding inside the box
+Config.INSTRUCTIONS_TEXT_BOX_RADIUS       = 8   -- corner radius (px)
+Config.INSTRUCTIONS_TEXT_LINE_GAP         = 2   -- px gap between the prompt and progress/hint lines
+Config.INSTRUCTIONS_TEXT_BOX_MAX_WIDTH    = 220 -- px each line wraps at -- the out-of-range hint is long enough to need it
 
 ----------
 -- Boot --
