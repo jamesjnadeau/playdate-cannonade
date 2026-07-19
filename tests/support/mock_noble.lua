@@ -82,6 +82,16 @@ function gfx.setLineWidth() end
 function gfx.drawLine() end
 function gfx.setImageDrawMode() end
 
+-- gfx.image.new(...) -- scenes use this to load static art (e.g.
+-- TitleScene's background); tests don't care about real pixels, just that
+-- the returned handle has a :draw(x, y) method to call.
+gfx.image = {}
+local fakeImage = { width = 0, height = 0 }
+function fakeImage:draw(__x, __y) end
+function gfx.image.new(__pathOrWidth, __height, __bgcolor)
+	return fakeImage
+end
+
 kTextAlignment = { left = 0, center = 1, right = 2 }
 
 -- playdate.getSystemMenu() ----------------------------------------------------
