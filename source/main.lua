@@ -28,6 +28,7 @@ import "scripts/Tridentball"
 import "scenes/TitleScene"
 import "scenes/InstructionsScene"
 import "scenes/SettingsScene"
+import "scenes/TuningScene"
 import "scenes/GameScene"
 import "scenes/GameSceneMain"
 import "scenes/GameSceneDemo"
@@ -49,6 +50,7 @@ local sceneByName = {
 	Title = TitleScene,
 	Instructions = InstructionsScene,
 	Settings = SettingsScene,
+	Tuning = TuningScene,
 	GameMain = GameSceneMain,
 	GameDemo = GameSceneDemo,
 	GameTraining = GameSceneTraining,

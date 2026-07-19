@@ -56,7 +56,7 @@ function TestSceneFlow:testTitleMenuNavigationWraps()
 	lu.assertEquals(Noble.currentScene().selected, 1) -- "Play"
 
 	Noble.Input.fire("upButtonDown")
-	lu.assertEquals(Noble.currentScene().selected, 4) -- wraps to "Settings"
+	lu.assertEquals(Noble.currentScene().selected, 5) -- wraps to "Tuning"
 
 	Noble.Input.fire("downButtonDown")
 	Noble.Input.fire("downButtonDown")
@@ -208,6 +208,78 @@ function TestSceneFlow:testTitleSettingsToggleAndBack()
 	local before = Config.HUD_SHOW_WIND_DIRECTION
 	Noble.Input.fire("AButtonDown")
 	lu.assertEquals(Config.HUD_SHOW_WIND_DIRECTION, not before)
+
+	Noble.Input.fire("BButtonDown")
+	lu.assertEquals(currentClassName(), "TitleScene")
+end
+
+-- TuningScene.selected starts on ROWS/SETTING_ROWS[1], which is always
+-- Config.WATER_GRID (CATEGORIES[1] = "Water", its first item) -- see
+-- TuningScene.lua.
+function TestSceneFlow:testTitleTuningAdjustNumberThenBack()
+	Noble.Input.fire("downButtonDown")
+	Noble.Input.fire("downButtonDown")
+	Noble.Input.fire("downButtonDown") -- 2 -> 5, "Tuning"
+	Noble.Input.fire("AButtonDown")
+	lu.assertEquals(currentClassName(), "TuningScene")
+
+	local scene = Noble.currentScene()
+	lu.assertEquals(scene.selected, 1)
+
+	local before = Config.WATER_GRID
+	Noble.Input.fire("rightButtonDown")
+	lu.assertEquals(Config.WATER_GRID, before + 5) -- WATER_GRID's step
+
+	Noble.Input.fire("leftButtonDown")
+	Noble.Input.fire("leftButtonDown")
+	lu.assertEquals(Config.WATER_GRID, before - 5)
+
+	-- Left clamps at WATER_GRID's configured minimum instead of going negative.
+	for _ = 1, 20 do
+		Noble.Input.fire("leftButtonDown")
+	end
+	lu.assertEquals(Config.WATER_GRID, 10)
+
+	-- A is a no-op on a numeric row.
+	Noble.Input.fire("AButtonDown")
+	lu.assertEquals(Config.WATER_GRID, 10)
+
+	Noble.Input.fire("BButtonDown")
+	lu.assertEquals(currentClassName(), "TitleScene")
+end
+
+-- Exercises the crank fast-scroll path (moves one row per 20 degrees, see
+-- TuningScene.CRANK_DEGREES_PER_ROW) and A's toggle behavior on a boolean
+-- row. Config.HUD_SHOW_WIND_SPEED is SETTING_ROWS[63]: 57 rows across the
+-- Water/Wind/Explosions/Ship/Sail/Trident categories, then 5 more HUD rows
+-- (the OFFSCREEN_INDICATOR_* fields) precede it within "HUD" -- see
+-- TuningScene.lua's CATEGORIES table; update this test if that ordering
+-- changes.
+function TestSceneFlow:testTitleTuningCrankScrollAndToggleBoolean()
+	Noble.Input.fire("downButtonDown")
+	Noble.Input.fire("downButtonDown")
+	Noble.Input.fire("downButtonDown") -- 2 -> 5, "Tuning"
+	Noble.Input.fire("AButtonDown")
+	local scene = Noble.currentScene()
+
+	Noble.Input.fire("cranked", 137) -- 6 full rows (120 deg) + 17 deg leftover
+	lu.assertEquals(scene.selected, 7)
+	lu.assertEquals(scene.crankAccum, 17)
+
+	Noble.Input.fire("cranked", -37) -- 17 - 37 = -20: one row back, 0 leftover
+	lu.assertEquals(scene.selected, 6)
+	lu.assertEquals(scene.crankAccum, 0)
+
+	Noble.Input.fire("cranked", 57 * 20) -- currently at row 6; jump straight to row 63
+	lu.assertEquals(scene.selected, 63)
+
+	local before = Config.HUD_SHOW_WIND_SPEED
+	Noble.Input.fire("AButtonDown")
+	lu.assertEquals(Config.HUD_SHOW_WIND_SPEED, not before)
+
+	-- Left/Right are a no-op on a boolean row.
+	Noble.Input.fire("rightButtonDown")
+	lu.assertEquals(Config.HUD_SHOW_WIND_SPEED, not before)
 
 	Noble.Input.fire("BButtonDown")
 	lu.assertEquals(currentClassName(), "TitleScene")

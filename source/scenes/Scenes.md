@@ -19,9 +19,11 @@ flowchart TD
     Title -->|"Training (A)"| GameTraining["GameSceneTraining"]
     Title -->|"Instructions (A)"| Instructions["InstructionsScene"]
     Title -->|"Settings (A)"| Settings["SettingsScene"]
+    Title -->|"Tuning (A)"| Tuning["TuningScene"]
 
     Instructions -->|"B"| Title
     Settings -->|"B"| Title
+    Tuning -->|"B"| Title
 
     GameTraining -->|"B"| Title
     GameTraining -->|"system menu: Select Enemy"| EnemySelect["EnemySelectScene"]
@@ -58,7 +60,7 @@ stubbed.
 ## TitleScene
 
 Start screen — the game's entry point (`main.lua` calls
-`Noble.new(TitleScene, ...)`). Renders a 4-item menu with
+`Noble.new(TitleScene, ...)`). Renders a 5-item menu with
 [playout](../libraries/playout.lua).
 
 - **Reached from:** app launch only.
@@ -68,6 +70,7 @@ Start screen — the game's entry point (`main.lua` calls
   - "Training" → `GameSceneTraining`
   - "Instructions" → `InstructionsScene`
   - "Settings" → `SettingsScene`
+  - "Tuning" → `TuningScene`
 - **sceneProperties read:** none.
 
 ## GameSceneMain
@@ -229,6 +232,36 @@ for scene-specific items like `GameSceneTraining`'s "Select Enemy"; see the
 - **Reached from:** `TitleScene` ("Settings").
 - **Controls:** Up/Down move the highlight (wraps); A toggles the
   highlighted setting; B returns to `TitleScene`.
+- **sceneProperties read:** none.
+
+## TuningScene
+
+A broad debug/tweak surface, not a curated player-facing settings screen
+like `SettingsScene`: a single scrollable, categorized menu covering nearly
+every `Config.lua` tuning value (~90 fields, grouped to mirror `Config.lua`'s
+own section comments). Changes are runtime-only — they mutate the global
+`Config` table in place, the same way `SettingsScene`'s `HUD_SHOW_*` toggles
+already do, and nothing here ever touches `playdate.datastore`, so nothing
+persists past the current play session. Built with
+[playout](../libraries/playout.lua); the row list is windowed
+(`VISIBLE_ROWS`) around the current selection rather than laid out in full,
+so the tree stays cheap to rebuild despite the field count.
+
+Deliberately excludes every `Config.ENEMY_*`/`ConfigEnemy.lua` field, plus a
+handful of `Config.lua` fields that can't be meaningfully live-tuned this
+way: `Config.EXPLOSION` (a structured pdParticles table, not a scalar —
+`EXPLOSION_WIND_INFLUENCE` next to it is still included), the display
+fundamentals `SCREEN_W`/`SCREEN_H`/`REFRESH`/`DT`, the boot-only string
+`START_SCENE`, and the build-time switch `DEMO_MODE`/`DEMO_MAX_LEVEL`. See
+the comment block at the top of `TuningScene.lua` for the full rationale.
+
+- **Reached from:** `TitleScene` ("Tuning").
+- **Controls:** Up/Down move the highlight (wraps); the crank fast-scrolls
+  the list (one row per `CRANK_DEGREES_PER_ROW` degrees turned, either
+  direction); Left/Right adjust the highlighted numeric setting by its step,
+  clamped to that field's configured min/max; A toggles the highlighted
+  boolean setting (a no-op on a numeric row, and Left/Right are a no-op on a
+  boolean row); B returns to `TitleScene`.
 - **sceneProperties read:** none.
 
 ## LevelCompleteScene
