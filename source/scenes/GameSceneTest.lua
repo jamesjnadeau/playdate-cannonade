@@ -23,14 +23,45 @@ function GameSceneTest:drawModeStatus()
 	gfx.drawText("TEST  " .. #self.enemies .. " up", Config.SCREEN_W - 90, 6)
 end
 
--- Wind-change countdown bar: full width when the timer resets, draining to
--- nothing right as the next wind change fires.
+-- Draws a sine-wave polyline from x=0 to x=width along baseline y, so the
+-- wind bars read as little waves rather than flat progress bars (matching
+-- the water's look -- see GameScene:drawWavelet). `dir` is +1/-1 and picks
+-- which way the crest crawls, so the two bars visibly move opposite ways.
+local function drawWaveBar(width, y, phase, dir)
+	if width <= 0 then return end
+	local amplitude = Config.WIND_BAR_WAVE_AMPLITUDE
+	local k = 2 * math.pi / Config.WIND_BAR_WAVE_WAVELENGTH
+	local segLen = 3
+	local prevX, prevY = 0, y + amplitude * math.sin(-dir * phase)
+	local x = 0
+	while x < width - 0.001 do
+		local nx = math.min(x + segLen, width)
+		local ny = y + amplitude * math.sin(nx * k - dir * phase)
+		gfx.drawLine(prevX, prevY, nx, ny)
+		prevX, prevY = nx, ny
+		x = nx
+	end
+end
+
 function GameSceneTest:drawHUD()
 	GameScene.drawHUD(self)
 
-	local frac = Utils.clamp(self.windChangeTimer / self.windChangeIntervalDuration, 0, 1)
 	gfx.setColor(gfx.kColorBlack)
-	gfx.fillRect(0, Config.SCREEN_H - 2, Config.SCREEN_W * frac, 2)
+	gfx.setLineWidth(1)
+	local phase = self.elapsed * Config.WIND_BAR_WAVE_SPEED * (2 * math.pi / Config.WIND_BAR_WAVE_WAVELENGTH)
+
+	-- Wind-change bar: counts down (draining to nothing) toward the next wind
+	-- change while the wind is settled, then -- while it eases toward its
+	-- latest targets and the countdown is paused -- swaps to counting up
+	-- (filling from nothing) toward the countdown resuming. Only one of the
+	-- two is ever drawn, so it always reads as a single bar.
+	if self.windSettled then
+		local countdownFrac = Utils.clamp(self.windChangeTimer / self.windChangeIntervalDuration, 0, 1)
+		drawWaveBar(Config.SCREEN_W * countdownFrac, Config.SCREEN_H - 3, phase, 1)
+	elseif self.windEaseDuration > 0 then
+		local easeFrac = Utils.clamp(self.windEaseTimer / self.windEaseDuration, 0, 1)
+		drawWaveBar(Config.SCREEN_W * easeFrac, Config.SCREEN_H - 3, phase, -1)
+	end
 end
 
 function GameSceneTest:gameOverPrompt()

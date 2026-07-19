@@ -28,5 +28,17 @@ import "scenes/LevelCompleteScene"
 -- Lock to a fixed 30fps so our fixed-timestep (Config.DT) matches wall-clock.
 playdate.display.setRefreshRate(Config.REFRESH)
 
+-- HUD visibility toggles, exposed via the system (pause) menu.
+local systemMenu = playdate.getSystemMenu()
+systemMenu:addCheckmarkMenuItem("Wind Speed", Config.HUD_SHOW_WIND_SPEED, function(value)
+	Config.HUD_SHOW_WIND_SPEED = value
+end)
+systemMenu:addCheckmarkMenuItem("Wind Direction", Config.HUD_SHOW_WIND_DIRECTION, function(value)
+	Config.HUD_SHOW_WIND_DIRECTION = value
+end)
+systemMenu:addCheckmarkMenuItem("Player Speed", Config.HUD_SHOW_PLAYER_SPEED, function(value)
+	Config.HUD_SHOW_PLAYER_SPEED = value
+end)
+
 -- Boot the engine, starting on the title screen.
 Noble.new(TitleScene)

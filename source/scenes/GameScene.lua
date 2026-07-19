@@ -88,6 +88,14 @@ function GameScene:resetGame(sceneProperties)
 		+ math.random() * (Config.WIND_CHANGE_INTERVAL_MAX - Config.WIND_CHANGE_INTERVAL_MIN)
 	self.windChangeTimer = self.windChangeIntervalDuration
 
+	-- Counts up (0 -> windEaseDuration) while the wind is easing toward its
+	-- current targets, i.e. exactly while windChangeTimer is paused. Lets the
+	-- HUD show progress toward the countdown resuming. Both start at 0 since
+	-- the wind begins already settled.
+	self.windEaseTimer = 0
+	self.windEaseDuration = 0
+	self.windSettled = true
+
 	-- Input state
 	self.trimInput = 0         -- -1 / 0 / +1 sail trim adjustment from Up/Down
 	self.chargingSide = nil
@@ -275,8 +283,11 @@ function GameScene:tickGame()
 	-- can't stack up faster than the ship can visibly react to them.
 	local windSettled = self.windSpeed == self.windSpeedTarget
 		and self.windDirection == self.windDirectionTarget
+	self.windSettled = windSettled
 	if windSettled then
 		self.windChangeTimer = self.windChangeTimer - dt
+	else
+		self.windEaseTimer = math.min(self.windEaseDuration, self.windEaseTimer + dt)
 	end
 	if windSettled and self.windChangeTimer <= 0 then
 		self.windSpeedTarget = Config.WIND_SPEED_MIN
@@ -294,6 +305,15 @@ function GameScene:tickGame()
 		self.windChangeIntervalDuration = Config.WIND_CHANGE_INTERVAL_MIN
 			+ math.random() * (Config.WIND_CHANGE_INTERVAL_MAX - Config.WIND_CHANGE_INTERVAL_MIN)
 		self.windChangeTimer = self.windChangeIntervalDuration
+
+		-- The countdown (windChangeTimer) freezes until speed and direction
+		-- both catch up to their new targets; estimate how long that'll take
+		-- from each one's distance-to-target and easing rate so the HUD can
+		-- show that wait filling up (see windEaseTimer above).
+		local speedEaseTime = math.abs(self.windSpeedTarget - self.windSpeed) / self.windSpeedChangeRate
+		local dirEaseTime = math.abs(Utils.angleDiff(self.windDirection, self.windDirectionTarget)) / self.windDirectionChangeRate
+		self.windEaseDuration = math.max(speedEaseTime, dirEaseTime)
+		self.windEaseTimer = 0
 	end
 
 	if self.windSpeed < self.windSpeedTarget then
@@ -303,8 +323,15 @@ function GameScene:tickGame()
 	end
 
 	local dirDiff = Utils.angleDiff(self.windDirection, self.windDirectionTarget)
-	local dirStep = Utils.clamp(dirDiff, -self.windDirectionChangeRate * dt, self.windDirectionChangeRate * dt)
-	self.windDirection = Utils.wrapDeg(self.windDirection + dirStep)
+	local maxDirStep = self.windDirectionChangeRate * dt
+	if dirDiff >= -maxDirStep and dirDiff <= maxDirStep then
+		-- Snap to the exact target (like the speed clamp above) so windSettled's
+		-- == check can actually become true instead of chasing float rounding forever.
+		self.windDirection = self.windDirectionTarget
+	else
+		local dirStep = Utils.clamp(dirDiff, -maxDirStep, maxDirStep)
+		self.windDirection = Utils.wrapDeg(self.windDirection + dirStep)
+	end
 
 	-- Apply sail trim (held Up/Down) and trident charge (held Left/Right).
 	if self.trimInput ~= 0 then
@@ -313,7 +340,7 @@ function GameScene:tickGame()
 	if self.chargingSide then
 		self.target = self:pickTarget(self.chargingSide)
 		if self.target then
-			self.charge = math.min(1, self.charge + Config.CHARGE_RATE * dt)
+			self.charge = math.min(1, self.charge + Config.TRIDENT_CHARGE_RATE * dt)
 		else
 			-- Nothing in range on this side: charge can't steady an aim that
 			-- has nothing to lock onto.
@@ -616,19 +643,17 @@ function GameScene:drawHUD()
 
 	-- Health pips (top-left)
 	for i = 1, Config.SHIP_MAX_HEALTH do
-		local x = 6 + (i - 1) * 12
-		gfx.setColor(gfx.kColorBlack)
-		if i <= self.ship.health then
-			gfx.fillRect(x, 6, 9, 9)
-		else
-			gfx.drawRect(x, 6, 9, 9)
-		end
+		local x = Config.HUD_HEART_MARGIN_X + (i - 1) * Config.HUD_HEART_SPACING
+		local heart = (i <= self.ship.health) and "❤️" or "🤍"
+		gfx.drawText(heart, x, Config.HUD_HEART_MARGIN_Y)
 	end
 
 	-- Speed gauge (bottom-left)
-	local gw, gh = 90, 8
-	local gx, gy = 6, Config.SCREEN_H - 16
-	gfx.drawText(string.format("%d px/s", math.floor(self.ship.speed + 0.5)), gx + 10, gy - 16)
+	if Config.HUD_SHOW_PLAYER_SPEED then
+		local gw, gh = 90, 8
+		local gx, gy = 6, Config.SCREEN_H - 16
+		gfx.drawText(string.format("%d px/s", math.floor(self.ship.speed + 0.5)), gx + 10, gy - 16)
+	end
 end
 
 -- Hook for whatever status text belongs in the top-right (level progress,
@@ -639,10 +664,14 @@ function GameScene:drawModeStatus() end
 function GameScene:drawWindIndicator()
 	local cx, cy = Config.SCREEN_W - 26, Config.SCREEN_H - 30
 	gfx.setColor(gfx.kColorBlack)
-	gfx.drawTextAligned(string.format("%d px/s", math.floor(self.windSpeed + 0.5)),
-		cx - Config.WIND_INDICATOR_CIRCLE_SIZE - 4, cy - 8, kTextAlignment.right)
-	gfx.drawCircleAtPoint(cx, cy, Config.WIND_INDICATOR_CIRCLE_SIZE)
-	self:drawArrow(cx, cy, self.windDirection, Config.WIND_INDICATOR_SIZE)
+	if Config.HUD_SHOW_WIND_SPEED then
+		gfx.drawTextAligned(string.format("%d px/s", math.floor(self.windSpeed + 0.5)),
+			cx - Config.WIND_INDICATOR_CIRCLE_SIZE - 4, cy - 8, kTextAlignment.right)
+	end
+	if Config.HUD_SHOW_WIND_DIRECTION then
+		gfx.drawCircleAtPoint(cx, cy, Config.WIND_INDICATOR_CIRCLE_SIZE)
+		self:drawArrow(cx, cy, self.windDirection, Config.WIND_INDICATOR_SIZE)
+	end
 end
 
 function GameScene:drawGameOver()

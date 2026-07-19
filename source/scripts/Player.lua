@@ -108,7 +108,7 @@ function Player:update(windDirection, windSpeed)
 	-- off the animated self.sailAngle, not the target, so the ship doesn't
 	-- catch wind until the boom actually swings into it.
 	local windBoost = math.max(0, sailPower(self.sailAngle, windDirection) * windSpeed)
-	local targetSpeed = Utils.clamp(Config.SHIP_DEFAULT_SPEED + windBoost, 0, Config.SHIP_MAX_SPEED)
+	local targetSpeed = Config.SHIP_DEFAULT_SPEED + windBoost
 	self:updateSpeed(targetSpeed, Config.SHIP_ACCEL, dt)
 
 	local hx, hy = Utils.heading(self.heading)

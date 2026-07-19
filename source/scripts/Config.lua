@@ -16,7 +16,7 @@ Config.DT         = 1 / 30
 -- always centers on the ship and nothing clamps its position.
 Config.WATER_GRID = 80             -- spacing of the drawn water speckle grid
 Config.WATER_WAVELET_LENGTH_MIN = 15 -- shortest span (px) of each wavelet, perpendicular to the wind
-Config.WATER_WAVELET_LENGTH_MAX = 32 -- longest span (px) of each wavelet, perpendicular to the wind
+Config.WATER_WAVELET_LENGTH_MAX = 55 -- longest span (px) of each wavelet, perpendicular to the wind
 Config.WATER_WAVELET_WIDTH = 1     -- line width (px) of each wavelet segment
 Config.WATER_WAVELET_SEGMENTS_PER_ZIGZAG_MIN = 6 -- fewest line segments per up/down cycle (higher = smoother curves)
 Config.WATER_WAVELET_SEGMENTS_PER_ZIGZAG_MAX = 8 -- most line segments per up/down cycle
@@ -33,8 +33,8 @@ Config.WATER_WAVELET_SPAWN_CHANCE = 0.35 -- chance (0-1) any given wavelet slot 
 -- target direction by a random +/- magnitude in WIND_DIRECTION_CHANGE_MIN..MAX
 -- degrees, easing toward it at a rate in WIND_DIRECTION_CHANGE_RATE_MIN..MAX
 -- (degrees per second).
-Config.WIND_SPEED_MIN             = 40  -- px/s a fully-out sail catches running dead downwind
-Config.WIND_SPEED_MAX             = 100
+Config.WIND_SPEED_MIN             = 20  -- px/s a fully-out sail catches running dead downwind
+Config.WIND_SPEED_MAX             = 80
 Config.WIND_SPEED_CHANGE_RATE_MIN = 1   -- px/s per second the wind eases toward its new target speed
 Config.WIND_SPEED_CHANGE_RATE_MAX = 3
 Config.WIND_CHANGE_INTERVAL_MIN   = 10   -- seconds between random wind changes
@@ -49,7 +49,7 @@ Config.WIND_INDICATOR_SIZE = 20
 -- toward the direction the wind is blowing (0 = wake trails straight behind
 -- the ship, 1 = wake is fully re-centered on the wind direction). See
 -- Player:update.
-Config.WAKE_WIND_INFLUENCE = 0.4
+Config.WAKE_WIND_INFLUENCE = 0.2
 
 -- Explosions ------------------------------------------------------------------
 -- Each field maps to one pdParticles ParticleCircle setter (see Ship:explode).
@@ -69,7 +69,7 @@ Config.EXPLOSION = {
 -- How much wind bends the explosion's spread arc toward the direction the
 -- wind is blowing (0 = ignore wind and use spread as authored above, 1 =
 -- spread arc is fully re-centered on the wind direction). See Ship:explode.
-Config.EXPLOSION_WIND_INFLUENCE = 1.0
+Config.EXPLOSION_WIND_INFLUENCE = 0.4
 
 -- Ship ----------------------------------------------------------------------
 -- set max ship speed to half way between min/max wind speed
@@ -91,7 +91,7 @@ Config.SHIP_WATER_FRICTION = 0.05
 -- from a wind boost pushing a ship past its cap): each second a ship loses
 -- this fraction of every pixel/second it's over the max, on top of the
 -- regular water friction above -- see Ship:updateSpeed.
-Config.SHIP_OVERSPEED_FRICTION = 0.05
+Config.SHIP_OVERSPEED_FRICTION = 0.025
 
 -- Sail ------------------------------------------------------------------
 -- Up/Down let the sail out / trim it in (0 = trimmed in, 1 = fully out).
@@ -130,7 +130,7 @@ Config.ENEMY_DAMAGE     = 1
 Config.ENEMY_LENGTH    = 20      -- half-length of hull when drawn, default 22
 Config.ENEMY_BEAM      = 8       -- half-width of hull when drawn
 Config.ENEMY_RADIUS     = Config.ENEMY_LENGTH
-Config.ENEMY_WIND_MULTIPLIER = 0.25 -- enemies have no sails: wind just adds a straight push of windSpeed * this, in the wind's direction, on top of their steering speed
+Config.ENEMY_WIND_MULTIPLIER = 0.1 -- enemies have no sails: wind just adds a straight push of windSpeed * this, in the wind's direction, on top of their steering speed
 Config.ENEMY_ACCEL      = 60    -- pixels/second, added per second while easing toward ENEMY_SPEED (see Ship:updateSpeed)
 
 -- With an infinite world an enemy that loses the player would otherwise
@@ -148,12 +148,16 @@ Config.SPAWN_RAMP_SECONDS   = 90
 Config.MAX_ENEMIES          = 40
 
 -- Trident -------------------------------------------------------------------
-Config.CHARGE_RATE      = 1.4   -- charge units / second (held), clamps at 1.0
+Config.TRIDENT_CHARGE_RATE      = 0.5   -- charge units / second (held), clamps at 1.0
 Config.TRIDENT_SPEED     = 420   -- projectile speed, fixed regardless of charge
 Config.TRIDENT_MAX_SPREAD = 40   -- degrees of random aim error at 0 charge
 Config.TRIDENT_MAX_ACCURACY = 0.99 -- accuracy (0-1) reached once fully charged
-Config.TRIDENT_LIFETIME  = 1.6   -- seconds before a ball falls in the sea
+Config.TRIDENT_LIFETIME  = 1.6   -- seconds before a trident falls in the sea
 Config.TRIDENT_RADIUS    = 2
+Config.TRIDENT_SHAFT_LENGTH  = 8  -- length (px) of the trailing shaft line
+Config.TRIDENT_PRONG_LENGTH  = 4  -- length (px) of each forward prong, from the crossbar
+Config.TRIDENT_PRONG_SPREAD  = 3  -- half-width (px) of the crossbar / outer prong offset
+Config.TRIDENT_LINE_WIDTH    = 2  -- stroke thickness (px) of the trident glyph
 Config.TARGET_RANGE     = 200   -- max auto-target acquisition distance, default: 320
 Config.AIM_LINE_LENGTH  = 18    -- length (px) of the converging aim-indicator lines
 Config.AIM_LINE_WIDTH   = 2     -- stroke thickness (px) of the aim-indicator lines
@@ -167,6 +171,23 @@ Config.NO_TARGET_MARK_OFFSET = 30 -- distance (px) from the ship's center to tha
 Config.OFFSCREEN_INDICATOR_MARGIN      = 40  -- px inset from the screen edge
 Config.OFFSCREEN_INDICATOR_SIZE        = 14  -- pixel size of the arrow glyph
 Config.OFFSCREEN_INDICATOR_GROUP_ANGLE = 18  -- degrees; enemies this close together share one indicator
+
+-- Toggled from the system menu (see main.lua); all default to visible.
+Config.HUD_SHOW_WIND_SPEED     = true
+Config.HUD_SHOW_WIND_DIRECTION = true
+Config.HUD_SHOW_PLAYER_SPEED   = true
+
+-- Health hearts (top-left): drawn one glyph at a time so spacing is exact
+-- regardless of what the font reports for a run of hearts + spaces.
+Config.HUD_HEART_MARGIN_X = 6   -- px inset from the left screen edge to the first heart
+Config.HUD_HEART_MARGIN_Y = 4   -- px inset from the top screen edge
+Config.HUD_HEART_SPACING  = 20  -- px from one heart's left edge to the next's
+
+-- Wind-change bar (test scene only, see GameSceneTest:drawHUD): drawn as a
+-- crawling sine wave instead of a flat bar to match the water's look.
+Config.WIND_BAR_WAVE_AMPLITUDE  = 3   -- px the wave bulges above/below its baseline
+Config.WIND_BAR_WAVE_WAVELENGTH = 20  -- px length of one full wave cycle
+Config.WIND_BAR_WAVE_SPEED      = 40  -- px/s the wave crawls sideways
 
 -- Levels ----------------------------------------------------------------
 -- Level N clears once the player has defeated N * LEVEL_ENEMY_STEP enemies
