@@ -14,6 +14,7 @@ local gfx <const> = playdate.graphics
 ---@field vy number px/s
 ---@field life number seconds remaining before it falls in the sea
 ---@field radius number collision radius
+---@field damage number health removed from an enemy on hit
 ---@field dead boolean
 Tridentball = class("Tridentball").extends() or Tridentball
 
@@ -21,7 +22,8 @@ Tridentball = class("Tridentball").extends() or Tridentball
 ---@param y number
 ---@param dirDeg number
 ---@param speed number
-function Tridentball:init(x, y, dirDeg, speed)
+---@param damage? number defaults to Config.TRIDENT_DAMAGE -- the autofire cannon passes its own value here
+function Tridentball:init(x, y, dirDeg, speed, damage)
 	Tridentball.super.init(self)
 	self.x = x
 	self.y = y
@@ -31,6 +33,7 @@ function Tridentball:init(x, y, dirDeg, speed)
 	self.vy = hy * speed
 	self.life = Config.TRIDENT_LIFETIME
 	self.radius = Config.TRIDENT_RADIUS
+	self.damage = damage or Config.TRIDENT_DAMAGE
 	self.dead = false
 end
 

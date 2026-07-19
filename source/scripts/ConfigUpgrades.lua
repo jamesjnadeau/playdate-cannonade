@@ -59,6 +59,15 @@ Config.UPGRADES = {
 		multiplier = 1.25,
 		format = function(v) return string.format("%.2f", v) .. " chg/s" end,
 	},
+	{
+		id = "autofire_cannon",
+		title = "Autofire Cannon",
+		description = "Mounts a cannon that fires on its own at the nearest enemy in range.",
+		configKey = "AUTOFIRE_CANNON_UNLOCKED",
+		delta = 1,
+		maxValue = 1,
+		format = function(v) return v > 0 and "Installed" or "Not installed" end,
+	},
 }
 
 -- Applies `upgrade` to the live Config table and returns the before/after

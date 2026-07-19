@@ -149,6 +149,18 @@ Config.AIM_LINE_WIDTH   = 2     -- stroke thickness (px) of the aim-indicator li
 Config.NO_TARGET_MARK_SIZE   = 16 -- pixel height of the "?" shown when charging with nothing in range
 Config.NO_TARGET_MARK_OFFSET = 30 -- distance (px) from the ship's center to that mark
 
+---------------------
+-- Autofire Cannon --
+---------------------
+-- A single cannon, unlocked via the "Autofire Cannon" upgrade (see
+-- ConfigUpgrades.lua), that fires on its own at the nearest enemy in range --
+-- no player input, unlike the manual port/starboard trident. See GameScene's
+-- cannonTimer tick and fireCannon.
+Config.AUTOFIRE_CANNON_UNLOCKED = 0     -- 0 = not installed, >0 = installed; set by the upgrade
+Config.AUTOFIRE_CANNON_DAMAGE   = 1     -- health removed from an enemy per cannon hit
+Config.AUTOFIRE_CANNON_DELAY    = 1.5   -- seconds between shots
+Config.AUTOFIRE_CANNON_RANGE    = Config.TARGET_RANGE / 2 -- max auto-target acquisition distance
+
 -----------
 -- Sound --
 -----------

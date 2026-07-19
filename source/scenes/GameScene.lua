@@ -47,6 +47,7 @@ local gfx <const> = playdate.graphics
 ---@field chargingSide? string "port" | "starboard"
 ---@field charge number 0-1
 ---@field target? Enemy
+---@field cannonTimer number seconds until the autofire cannon can fire again, see updateCannon
 ---@field enemyTypes table[] class-level: Enemy/EnemySwordfish/EnemyKraken class tables eligible for random spawning
 GameScene = class("GameScene").extends(NobleScene) or GameScene
 
@@ -145,6 +146,7 @@ function GameScene:resetGame(sceneProperties)
 	self.chargingSide = nil
 	self.charge = 0
 	self.target = nil
+	self.cannonTimer = 0 -- autofire cannon; see updateCannon -- 0 lets it fire as soon as a level starts, if unlocked and something's in range
 end
 
 -- Wind speed's easing rate and how often it changes, in {speedChangeRateMin,
@@ -243,17 +245,23 @@ function GameScene:beginCharge(side)
 	self.target = self:pickTarget(side)
 end
 
--- Choose the nearest enemy on the given side, within targeting range.
----@param side string "port" | "starboard"
+-- Choose the nearest enemy on the given side, within `range` (defaults to
+-- Config.TARGET_RANGE). side = nil skips the side check entirely -- used by
+-- the autofire cannon, which (unlike the manual port/starboard trident)
+-- targets the nearest enemy anywhere around the ship.
+---@param side? string "port" | "starboard" | nil for "either side"
+---@param range? number defaults to Config.TARGET_RANGE
 ---@return Enemy?
-function GameScene:pickTarget(side)
+function GameScene:pickTarget(side, range)
 	local ship = self.ship
 	local fx, fy = Utils.heading(ship.heading)
-	local best, bestD2 = nil, Config.TARGET_RANGE * Config.TARGET_RANGE
+	range = range or Config.TARGET_RANGE
+	local best, bestD2 = nil, range * range
 	for _, e in ipairs(self.enemies) do
 		local dx, dy = e.x - ship.x, e.y - ship.y
 		local cross = fx * dy - fy * dx      -- >0 starboard, <0 port
-		local onSide = (side == "starboard" and cross > 0) or (side == "port" and cross < 0)
+		local onSide = side == nil
+			or (side == "starboard" and cross > 0) or (side == "port" and cross < 0)
 		if onSide then
 			local d2 = dx * dx + dy * dy
 			if d2 < bestD2 then
@@ -300,6 +308,41 @@ end
 function GameScene:currentAimSpread()
 	local accuracy = Config.TRIDENT_MAX_ACCURACY * self.charge
 	return Config.TRIDENT_MAX_SPREAD * (1 - accuracy)
+end
+
+-- ---------------------------------------------------------------------------
+-- Autofire cannon (see Config.AUTOFIRE_CANNON_* and the "Autofire Cannon"
+-- upgrade in ConfigUpgrades.lua)
+-- ---------------------------------------------------------------------------
+
+-- Called once per tick from tickGame. No-ops until the upgrade is picked
+-- (Config.AUTOFIRE_CANNON_UNLOCKED); once unlocked, fires unassisted at the
+-- nearest enemy within Config.AUTOFIRE_CANNON_RANGE every
+-- Config.AUTOFIRE_CANNON_DELAY seconds -- no charge, no player input, no
+-- side restriction (unlike the manual port/starboard trident).
+---@param dt number
+function GameScene:updateCannon(dt)
+	if Config.AUTOFIRE_CANNON_UNLOCKED <= 0 then return end
+	if self.cannonTimer > 0 then
+		self.cannonTimer = self.cannonTimer - dt
+		return
+	end
+	local target = self:pickTarget(nil, Config.AUTOFIRE_CANNON_RANGE)
+	if not target then return end
+	self:fireCannon(target)
+	self.cannonTimer = Config.AUTOFIRE_CANNON_DELAY
+end
+
+---@param target Enemy
+function GameScene:fireCannon(target)
+	local ship = self.ship
+	local dir = Utils.angleTo(ship.x, ship.y, target.x, target.y)
+	local speed = Config.TRIDENT_SPEED
+	local hx, hy = Utils.heading(dir)
+	local bx = ship.x + hx * (Config.SHIP_LENGTH + 4)
+	local by = ship.y + hy * (Config.SHIP_LENGTH + 4)
+	self.tridentballs[#self.tridentballs + 1] = Tridentball(bx, by, dir, speed, Config.AUTOFIRE_CANNON_DAMAGE)
+	Sound.playTridentWhoosh()
 end
 
 -- ---------------------------------------------------------------------------
@@ -459,6 +502,7 @@ function GameScene:tickGame()
 	end
 
 	self.ship:update(self.windDirection, self.windSpeed)
+	self:updateCannon(dt)
 
 	self:updateSpawning(dt)
 
@@ -485,7 +529,7 @@ function GameScene:tickGame()
 		for j = #self.enemies, 1, -1 do
 			local e = self.enemies[j]
 			if Utils.dist(b.x, b.y, e.x, e.y) < (b.radius + e.radius) then
-				e:hit(Config.TRIDENT_DAMAGE)
+				e:hit(b.damage)
 				hit = true
 				if not e.alive then
 					self:addExplosion(e)
