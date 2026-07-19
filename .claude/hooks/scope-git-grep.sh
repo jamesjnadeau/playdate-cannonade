@@ -7,7 +7,7 @@
 # only actually applies inside it.
 set -euo pipefail
 
-REPO="/home/jamesn/Playdate/mermaidMadness"
+REPO="$CLAUDE_PROJECT_DIR"
 
 jq -c --arg repo "$REPO" '
 	(.tool_input.command // "") as $c
