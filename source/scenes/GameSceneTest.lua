@@ -23,6 +23,16 @@ function GameSceneTest:drawModeStatus()
 	gfx.drawText("TEST  " .. #self.enemies .. " up", Config.SCREEN_W - 90, 6)
 end
 
+-- Wind-change countdown bar: full width when the timer resets, draining to
+-- nothing right as the next wind change fires.
+function GameSceneTest:drawHUD()
+	GameScene.drawHUD(self)
+
+	local frac = Utils.clamp(self.windChangeTimer / self.windChangeIntervalDuration, 0, 1)
+	gfx.setColor(gfx.kColorBlack)
+	gfx.fillRect(0, Config.SCREEN_H - 2, Config.SCREEN_W * frac, 2)
+end
+
 function GameSceneTest:gameOverPrompt()
 	return "Ⓑ to return to menu"
 end

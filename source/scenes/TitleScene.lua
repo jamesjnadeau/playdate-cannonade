@@ -14,13 +14,13 @@ local scene = nil
 -- themselves are only referenced inside confirmSelection() below, which runs
 -- long after every scene file has finished loading, so load order here
 -- doesn't matter.
-local MENU_ITEMS = { "Play", "Test Enemies" }
+local MENU_ITEMS = { "Play", "Test Enemies", "Instructions" }
 
 function TitleScene:init(...)
 	TitleScene.super.init(self, ...)
 	self.backgroundColor = gfx.kColorWhite
 	self.t = 0
-	self.selected = 1
+	self.selected = 2
 end
 
 function TitleScene:start()
@@ -37,8 +37,10 @@ local function confirmSelection()
 	if not scene then return end
 	if scene.selected == 1 then
 		Noble.transition(GameSceneMain)
-	else
+	elseif scene.selected == 2 then
 		Noble.transition(GameSceneTest)
+	else
+		Noble.transition(InstructionsScene)
 	end
 end
 
@@ -63,12 +65,8 @@ function TitleScene:update()
 	local cx = Config.SCREEN_W / 2
 
 	gfx.setImageDrawMode(gfx.kDrawModeCopy)
-	gfx.drawTextAligned("* CANNONADE *", cx, 40, kTextAlignment.center)
+	gfx.drawTextAligned("* Mermaid Madness *", cx, 40, kTextAlignment.center)
 	gfx.drawTextAligned("a Playdate pirate voyage", cx, 62, kTextAlignment.center)
-
-	gfx.drawTextAligned("Crank to steer the helm", cx, 96, kTextAlignment.center)
-	gfx.drawTextAligned("Up/Down to trim the sails", cx, 112, kTextAlignment.center)
-	gfx.drawTextAligned("Left/Right to charge a broadside", cx, 128, kTextAlignment.center)
 
 	local menuTop = 158
 	for i, label in ipairs(MENU_ITEMS) do

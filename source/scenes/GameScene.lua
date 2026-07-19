@@ -1,7 +1,7 @@
 -- GameScene.lua
 -- Base class for the sailing/combat scenes (GameSceneMain, GameSceneTest).
--- Holds everything they share: ship/wind/cannon physics, enemy and
--- cannonball collision handling, and all rendering. Subclasses hook in
+-- Holds everything they share: ship/wind/trident physics, enemy and
+-- tridentball collision handling, and all rendering. Subclasses hook in
 -- their own enemy-spawning policy and extra HUD text; see updateSpawning()
 -- and drawModeStatus() below. This class is never instantiated directly.
 
@@ -9,7 +9,7 @@ import "scripts/Config"
 import "scripts/Utils"
 import "scripts/Player"
 import "scripts/Enemy"
-import "scripts/Cannonball"
+import "scripts/Tridentball"
 
 local gfx <const> = playdate.graphics
 
@@ -72,14 +72,21 @@ function GameScene:resetGame(sceneProperties)
 	clearAllParticles()
 	self.ship = Player(0, 0)
 	self.enemies = {}
-	self.cannonballs = {}
+	self.tridentballs = {}
 	self.explosions = {}
 	self.elapsed = 0
 	self.score = 0
 	self.gameOver = false
 
 	self.windDirection = math.random() * 360
-	self.windSpeed = Config.WIND_SPEED
+	self.windDirectionTarget = self.windDirection
+	self.windDirectionChangeRate = Config.WIND_DIRECTION_CHANGE_RATE_MIN
+	self.windSpeed = Config.WIND_SPEED_MIN + math.random() * (Config.WIND_SPEED_MAX - Config.WIND_SPEED_MIN)
+	self.windSpeedTarget = self.windSpeed
+	self.windSpeedChangeRate = Config.WIND_SPEED_CHANGE_RATE_MIN
+	self.windChangeIntervalDuration = Config.WIND_CHANGE_INTERVAL_MIN
+		+ math.random() * (Config.WIND_CHANGE_INTERVAL_MAX - Config.WIND_CHANGE_INTERVAL_MIN)
+	self.windChangeTimer = self.windChangeIntervalDuration
 
 	-- Input state
 	self.trimInput = 0         -- -1 / 0 / +1 sail trim adjustment from Up/Down
@@ -92,7 +99,7 @@ end
 -- Input (class-level handlers; callbacks defer to the current instance)
 -- ---------------------------------------------------------------------------
 
--- The steering/trim/cannon bindings every variant shares. Each subclass
+-- The steering/trim/trident bindings every variant shares. Each subclass
 -- builds its own inputHandler from this (input tables don't merge through
 -- inheritance the way methods do) and adds its own A/B bindings on top.
 -- `getScene` should return the currently-active instance -- pass
@@ -143,7 +150,7 @@ function GameScene.buildSharedInputHandler(getScene)
 end
 
 -- ---------------------------------------------------------------------------
--- Cannon: charging + auto-target
+-- Trident: charging + auto-target
 -- ---------------------------------------------------------------------------
 
 function GameScene:beginCharge(side)
@@ -187,11 +194,11 @@ function GameScene:releaseCharge(side)
 		-- Charging steadies the aim: accuracy ramps up to 99% at full charge,
 		-- so an undercharged shot can still stray wide of the target.
 		dir = Utils.wrapDeg(dir + (math.random() * 2 - 1) * self:currentAimSpread())
-		local speed = Config.CANNON_SPEED
+		local speed = Config.TRIDENT_SPEED
 		local hx, hy = Utils.heading(dir)
 		local bx = ship.x + hx * (Config.SHIP_LENGTH + 4)
 		local by = ship.y + hy * (Config.SHIP_LENGTH + 4)
-		self.cannonballs[#self.cannonballs + 1] = Cannonball(bx, by, dir, speed)
+		self.tridentballs[#self.tridentballs + 1] = Tridentball(bx, by, dir, speed)
 	end
 
 	self.chargingSide = nil
@@ -200,10 +207,10 @@ function GameScene:releaseCharge(side)
 end
 
 -- Degrees of random aim error at the current charge: full spread at 0 charge,
--- narrowing to (1 - CANNON_MAX_ACCURACY) worth of spread once fully charged.
+-- narrowing to (1 - TRIDENT_MAX_ACCURACY) worth of spread once fully charged.
 function GameScene:currentAimSpread()
-	local accuracy = Config.CANNON_MAX_ACCURACY * self.charge
-	return Config.CANNON_MAX_SPREAD * (1 - accuracy)
+	local accuracy = Config.TRIDENT_MAX_ACCURACY * self.charge
+	return Config.TRIDENT_MAX_SPREAD * (1 - accuracy)
 end
 
 -- ---------------------------------------------------------------------------
@@ -233,10 +240,10 @@ end
 function GameScene:updateSpawning(dt) end
 
 function GameScene:addExplosion(ship)
-	self.explosions[#self.explosions + 1] = ship:explode()
+	self.explosions[#self.explosions + 1] = ship:explode(self.windDirection)
 end
 
--- Call whenever an enemy is destroyed, however it died (rammed or cannoned).
+-- Call whenever an enemy is destroyed, however it died (rammed or tridented).
 -- Subclasses that track further progress (level kills, ...) should override
 -- this and call GameScene.super.enemyDefeated(self) first.
 function GameScene:enemyDefeated()
@@ -261,11 +268,45 @@ function GameScene:tickGame()
 	local dt = Config.DT
 	self.elapsed = self.elapsed + dt
 
-	-- Wind wanders slowly rather than sitting still all run.
-	self.windDirection = Utils.wrapDeg(
-		self.windDirection + (math.random() * 2 - 1) * Config.WIND_DIRECTION_DRIFT_RATE * dt)
+	-- Wind wanders rather than sitting still all run: every so often it picks
+	-- a new target speed and direction, then eases both toward those targets
+	-- at a random rate until the next change. The countdown to the next
+	-- change is paused while the current one is still easing in, so changes
+	-- can't stack up faster than the ship can visibly react to them.
+	local windSettled = self.windSpeed == self.windSpeedTarget
+		and self.windDirection == self.windDirectionTarget
+	if windSettled then
+		self.windChangeTimer = self.windChangeTimer - dt
+	end
+	if windSettled and self.windChangeTimer <= 0 then
+		self.windSpeedTarget = Config.WIND_SPEED_MIN
+			+ math.random() * (Config.WIND_SPEED_MAX - Config.WIND_SPEED_MIN)
+		self.windSpeedChangeRate = Config.WIND_SPEED_CHANGE_RATE_MIN
+			+ math.random() * (Config.WIND_SPEED_CHANGE_RATE_MAX - Config.WIND_SPEED_CHANGE_RATE_MIN)
 
-	-- Apply sail trim (held Up/Down) and cannon charge (held Left/Right).
+		local shift = Config.WIND_DIRECTION_CHANGE_MIN
+			+ math.random() * (Config.WIND_DIRECTION_CHANGE_MAX - Config.WIND_DIRECTION_CHANGE_MIN)
+		if math.random() < 0.5 then shift = -shift end
+		self.windDirectionTarget = Utils.wrapDeg(self.windDirection + shift)
+		self.windDirectionChangeRate = Config.WIND_DIRECTION_CHANGE_RATE_MIN
+			+ math.random() * (Config.WIND_DIRECTION_CHANGE_RATE_MAX - Config.WIND_DIRECTION_CHANGE_RATE_MIN)
+
+		self.windChangeIntervalDuration = Config.WIND_CHANGE_INTERVAL_MIN
+			+ math.random() * (Config.WIND_CHANGE_INTERVAL_MAX - Config.WIND_CHANGE_INTERVAL_MIN)
+		self.windChangeTimer = self.windChangeIntervalDuration
+	end
+
+	if self.windSpeed < self.windSpeedTarget then
+		self.windSpeed = math.min(self.windSpeedTarget, self.windSpeed + self.windSpeedChangeRate * dt)
+	elseif self.windSpeed > self.windSpeedTarget then
+		self.windSpeed = math.max(self.windSpeedTarget, self.windSpeed - self.windSpeedChangeRate * dt)
+	end
+
+	local dirDiff = Utils.angleDiff(self.windDirection, self.windDirectionTarget)
+	local dirStep = Utils.clamp(dirDiff, -self.windDirectionChangeRate * dt, self.windDirectionChangeRate * dt)
+	self.windDirection = Utils.wrapDeg(self.windDirection + dirStep)
+
+	-- Apply sail trim (held Up/Down) and trident charge (held Left/Right).
 	if self.trimInput ~= 0 then
 		self.ship:adjustSailTrim(self.trimInput * Config.SAIL_TRIM_RATE * dt)
 	end
@@ -288,7 +329,7 @@ function GameScene:tickGame()
 	local ship = self.ship
 	for i = #self.enemies, 1, -1 do
 		local e = self.enemies[i]
-		e:update(ship.x, ship.y)
+		e:update(ship.x, ship.y, self.windDirection, self.windSpeed)
 		if Utils.dist(e.x, e.y, ship.x, ship.y) < (Config.SHIP_COLLIDE_RADIUS + e.radius) then
 			self:addExplosion(e)
 			table.remove(self.enemies, i)
@@ -299,9 +340,9 @@ function GameScene:tickGame()
 		end
 	end
 
-	-- Cannonballs move and hit.
-	for i = #self.cannonballs, 1, -1 do
-		local b = self.cannonballs[i]
+	-- Tridentballs move and hit.
+	for i = #self.tridentballs, 1, -1 do
+		local b = self.tridentballs[i]
 		b:update()
 		local hit = false
 		for j = #self.enemies, 1, -1 do
@@ -315,7 +356,7 @@ function GameScene:tickGame()
 			end
 		end
 		if hit or b.dead then
-			table.remove(self.cannonballs, i)
+			table.remove(self.tridentballs, i)
 		end
 	end
 end
@@ -341,10 +382,10 @@ function GameScene:render()
 	self:drawWater(camX, camY)
 
 	-- Wake sits under the hulls.
-	self.ship.wake:update()
+	self.ship:drawWake()
 
 	for _, e in ipairs(self.enemies) do e:draw() end
-	for _, b in ipairs(self.cannonballs) do b:draw() end
+	for _, b in ipairs(self.tridentballs) do b:draw() end
 	self.ship:draw()
 
 	-- Explosions on top, then prune spent systems (age cap as a safety net).
@@ -368,17 +409,75 @@ function GameScene:render()
 	if self.gameOver then self:drawGameOver() end
 end
 
+-- Integer hash (mix-then-fold) used to pick each wavelet's segment count.
+-- Grid indices (not raw world coordinates) go in: world coordinates are
+-- multiples of WATER_GRID / WATER_GRID/2, and a plain weighted sum of those
+-- collapses to the same residue for every wavelet once the range divides
+-- the grid spacing -- this scrambles the bits first so it doesn't.
+local function waterHash(a, b, c)
+	local h = a * 374761393 + b * 668265263 + c * 1136930381
+	h = (h ~ (h >> 13)) * 1274126177
+	h = h ~ (h >> 16)
+	return h
+end
+
 function GameScene:drawWater(camX, camY)
 	local g = Config.WATER_GRID
 	local startX = math.floor(camX / g) * g
 	local startY = math.floor(camY / g) * g
 	gfx.setColor(gfx.kColorBlack)
+	gfx.setLineWidth(Config.WATER_WAVELET_WIDTH)
+
+	-- Wavelets are short wave-shaped lines spanning perpendicular to the wind
+	-- (real sea waves crest across the wind, not along it), with their
+	-- undulation bulging along the wind axis.
+	local hx, hy = Utils.heading(self.windDirection)
+	local px, py = -hy, hx
 	for gx = startX, camX + Config.SCREEN_W + g, g do
+		local ix = math.floor(gx / g)
 		for gy = startY, camY + Config.SCREEN_H + g, g do
-			-- Little staggered wavelets for a sea texture.
-			gfx.fillRect(gx, gy, 2, 1)
-			gfx.fillRect(gx + g / 2, gy + g / 2, 2, 1)
+			local iy = math.floor(gy / g)
+			self:drawWavelet(gx, gy, px, py, hx, hy, ix, iy, 0)
+			self:drawWavelet(gx + g / 2, gy + g / 2, px, py, hx, hy, ix, iy, 1)
 		end
+	end
+end
+
+-- Draws one wave-shaped wavelet centered at (cx, cy): a polyline spanning a
+-- length (px) along the (px, py) axis, undulating by
+-- Config.WATER_WAVELET_AMPLITUDE along the (wx, wy) axis. Length and zigzag
+-- count are picked from their own [MIN, MAX] range via waterHash(ix, iy,
+-- variant), so they vary per wavelet but stay stable frame to frame instead
+-- of flickering. Segment count is derived from zigzags (segments-per-zigzag,
+-- also hashed) rather than picked independently, so every up/down cycle
+-- always gets enough points to read as a curve instead of a jagged zigzag.
+-- Config.WATER_WAVELET_SPAWN_CHANCE rolls (with the same stable hash)
+-- whether this slot draws anything at all.
+function GameScene:drawWavelet(cx, cy, px, py, wx, wy, ix, iy, variant)
+	local spawnRoll = (waterHash(ix, iy, variant + 3000) % 10000) / 10000
+	if spawnRoll >= Config.WATER_WAVELET_SPAWN_CHANCE then return end
+
+	local lenMin, lenMax = Config.WATER_WAVELET_LENGTH_MIN, Config.WATER_WAVELET_LENGTH_MAX
+	local lenT = (waterHash(ix, iy, variant + 1000) % 1009) / 1009
+	local length = lenMin + lenT * (lenMax - lenMin)
+
+	local zigMin, zigMax = Config.WATER_WAVELET_ZIGZAGS_MIN, Config.WATER_WAVELET_ZIGZAGS_MAX
+	local zigzags = zigMin + (waterHash(ix, iy, variant + 2000) % (zigMax - zigMin + 1))
+
+	local spzMin, spzMax = Config.WATER_WAVELET_SEGMENTS_PER_ZIGZAG_MIN, Config.WATER_WAVELET_SEGMENTS_PER_ZIGZAG_MAX
+	local segmentsPerZigzag = spzMin + (waterHash(ix, iy, variant + 4000) % (spzMax - spzMin + 1))
+	local segments = zigzags * segmentsPerZigzag
+
+	local halfLen = length / 2
+	local amplitude = Config.WATER_WAVELET_AMPLITUDE
+	local prevX, prevY = cx - px * halfLen, cy - py * halfLen
+	for i = 1, segments do
+		local t = -halfLen + length * i / segments
+		local wave = amplitude * math.sin(2 * math.pi * zigzags * i / segments)
+		local x = cx + px * t + wx * wave
+		local y = cy + py * t + wy * wave
+		gfx.drawLine(prevX, prevY, x, y)
+		prevX, prevY = x, y
 	end
 end
 
@@ -433,7 +532,7 @@ end
 
 -- Two short lines near the ship show live aim spread: wide apart while
 -- undercharged, converging onto the dotted target line as charge (and thus
--- accuracy) builds toward CANNON_MAX_ACCURACY.
+-- accuracy) builds toward TRIDENT_MAX_ACCURACY.
 function GameScene:drawAimLines(sx, sy, tx, ty)
 	local dir = Utils.angleTo(sx, sy, tx, ty)
 	local spread = self:currentAimSpread()
@@ -529,10 +628,7 @@ function GameScene:drawHUD()
 	-- Speed gauge (bottom-left)
 	local gw, gh = 90, 8
 	local gx, gy = 6, Config.SCREEN_H - 16
-	gfx.drawText("SPEED", gx, gy - 16)
-	gfx.drawRect(gx, gy, gw, gh)
-	local fill = (self.ship.speed / Config.SHIP_MAX_SPEED) * (gw - 2)
-	gfx.fillRect(gx + 1, gy + 1, fill, gh - 2)
+	gfx.drawText(string.format("%d px/s", math.floor(self.ship.speed + 0.5)), gx + 10, gy - 16)
 end
 
 -- Hook for whatever status text belongs in the top-right (level progress,
@@ -543,7 +639,8 @@ function GameScene:drawModeStatus() end
 function GameScene:drawWindIndicator()
 	local cx, cy = Config.SCREEN_W - 26, Config.SCREEN_H - 30
 	gfx.setColor(gfx.kColorBlack)
-	gfx.drawText("WIND", Config.SCREEN_W - 46, Config.SCREEN_H - 50)
+	gfx.drawTextAligned(string.format("%d px/s", math.floor(self.windSpeed + 0.5)),
+		cx - Config.WIND_INDICATOR_CIRCLE_SIZE - 4, cy - 8, kTextAlignment.right)
 	gfx.drawCircleAtPoint(cx, cy, Config.WIND_INDICATOR_CIRCLE_SIZE)
 	self:drawArrow(cx, cy, self.windDirection, Config.WIND_INDICATOR_SIZE)
 end

@@ -15,23 +15,46 @@ function Enemy:init(x, y, heading)
 	self.length = Config.ENEMY_LENGTH
 	self.color = gfx.kColorBlack
 	self.health = 1
+	self.speed = 0
 	self.teleportWarning = nil -- seconds left before relocation; nil when not pending
 
 	local L, B = Config.ENEMY_LENGTH, Config.ENEMY_BEAM
 	self.hull = { L, 0,  -L * 0.7, B,  -L, B * 0.55,  -L, -B * 0.55,  -L * 0.7, -B }
 end
 
-function Enemy:update(targetX, targetY)
+-- Turn rate falls off linearly from ENEMY_TURN_RATE_MAX toward
+-- ENEMY_TURN_RATE_MIN as self.speed rises toward ENEMY_SPEED *
+-- ENEMY_TURN_RATE_SPEED_MULTIPLIER (see the Config comment for why that
+-- reference speed isn't just ENEMY_SPEED).
+function Enemy:currentTurnRate()
+	local maxSpeed = Config.ENEMY_SPEED * Config.ENEMY_TURN_RATE_SPEED_MULTIPLIER
+	local speedRatio = maxSpeed > 0 and (self.speed / maxSpeed) or 0
+	if speedRatio < 0 then speedRatio = 0 elseif speedRatio > 1 then speedRatio = 1 end
+	return Config.ENEMY_TURN_RATE_MAX - (Config.ENEMY_TURN_RATE_MAX - Config.ENEMY_TURN_RATE_MIN) * speedRatio
+end
+
+function Enemy:update(targetX, targetY, windDirection, windSpeed)
 	local dt = Config.DT
 	local want = Utils.angleTo(self.x, self.y, targetX, targetY)
 	local diff = Utils.angleDiff(self.heading, want)
-	local maxTurn = Config.ENEMY_TURN_RATE * dt
+	local turnRate = self:currentTurnRate()
+	local maxTurn = turnRate * dt
 	if diff > maxTurn then diff = maxTurn elseif diff < -maxTurn then diff = -maxTurn end
 	self.heading = Utils.wrapDeg(self.heading + diff)
 
+	self:updateSpeed(Config.ENEMY_SPEED, Config.ENEMY_ACCEL, dt)
 	local hx, hy = Utils.heading(self.heading)
-	self.x = self.x + hx * Config.ENEMY_SPEED * dt
-	self.y = self.y + hy * Config.ENEMY_SPEED * dt
+	self.x = self.x + hx * self.speed * dt
+	self.y = self.y + hy * self.speed * dt
+
+	-- No sails to trim, so wind just shoves them along at a straight,
+	-- configurable fraction of its speed on top of their steering.
+	if windDirection and windSpeed then
+		local wx, wy = Utils.heading(windDirection)
+		local push = windSpeed * Config.ENEMY_WIND_MULTIPLIER
+		self.x = self.x + wx * push * dt
+		self.y = self.y + wy * push * dt
+	end
 
 	self:updateLeash(targetX, targetY, dt)
 end

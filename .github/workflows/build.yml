@@ -1,4 +1,4 @@
-name: Build Cannonade
+name: Build Tridentade
 
 on:
   push:
@@ -37,21 +37,21 @@ jobs:
           pdc --version
 
       - name: Compile
-        # pdc reads source/ (main.lua + pdxinfo) and emits Cannonade.pdx
-        run: pdc -sdkpath "$PLAYDATE_SDK_PATH" source Cannonade.pdx
+        # pdc reads source/ (main.lua + pdxinfo) and emits Tridentade.pdx
+        run: pdc -sdkpath "$PLAYDATE_SDK_PATH" source Tridentade.pdx
 
       - name: Package
-        run: zip -r Cannonade.pdx.zip Cannonade.pdx
+        run: zip -r Tridentade.pdx.zip Tridentade.pdx
 
       - name: Upload build artifact
         uses: actions/upload-artifact@v4
         with:
-          name: Cannonade-pdx
-          path: Cannonade.pdx.zip
+          name: Tridentade-pdx
+          path: Tridentade.pdx.zip
           if-no-files-found: error
 
       - name: Publish release
         if: startsWith(github.ref, 'refs/tags/v')
         uses: softprops/action-gh-release@v2
         with:
-          files: Cannonade.pdx.zip
+          files: Tridentade.pdx.zip

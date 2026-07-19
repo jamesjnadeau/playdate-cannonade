@@ -1,4 +1,4 @@
--- Cannonball.lua
+-- Tridentball.lua
 -- A projectile fired from the ship toward an auto-targeted enemy.
 
 import "scripts/Config"
@@ -6,21 +6,21 @@ import "scripts/Utils"
 
 local gfx <const> = playdate.graphics
 
-class("Cannonball").extends()
+class("Tridentball").extends()
 
-function Cannonball:init(x, y, dirDeg, speed)
-	Cannonball.super.init(self)
+function Tridentball:init(x, y, dirDeg, speed)
+	Tridentball.super.init(self)
 	self.x = x
 	self.y = y
 	local hx, hy = Utils.heading(dirDeg)
 	self.vx = hx * speed
 	self.vy = hy * speed
-	self.life = Config.CANNON_LIFETIME
-	self.radius = Config.CANNON_RADIUS
+	self.life = Config.TRIDENT_LIFETIME
+	self.radius = Config.TRIDENT_RADIUS
 	self.dead = false
 end
 
-function Cannonball:update()
+function Tridentball:update()
 	local dt = Config.DT
 	self.x = self.x + self.vx * dt
 	self.y = self.y + self.vy * dt
@@ -28,7 +28,7 @@ function Cannonball:update()
 	if self.life <= 0 then self.dead = true end
 end
 
-function Cannonball:draw()
+function Tridentball:draw()
 	gfx.setColor(gfx.kColorBlack)
 	gfx.fillCircleAtPoint(self.x, self.y, self.radius + 1)
 	gfx.setColor(gfx.kColorWhite)

@@ -1,5 +1,5 @@
 -- main.lua
--- Cannonade — a top-down pirate sailing game for Playdate.
+-- Tridentade — a top-down pirate sailing game for Playdate.
 -- Built on Noble Engine (scenes/input/transitions) + pdParticles (wake/explosions).
 
 import "CoreLibs/graphics"
@@ -17,8 +17,9 @@ import "scripts/Config"
 import "scripts/Utils"
 import "scripts/Ship"
 import "scripts/Enemy"
-import "scripts/Cannonball"
+import "scripts/Tridentball"
 import "scenes/TitleScene"
+import "scenes/InstructionsScene"
 import "scenes/GameScene"
 import "scenes/GameSceneMain"
 import "scenes/GameSceneTest"

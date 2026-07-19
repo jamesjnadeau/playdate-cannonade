@@ -1,4 +1,4 @@
-# Cannonade
+# Mermaid Madness
 
 A top-down pirate sailing game for the [Playdate](https://play.date), built on
 [Noble Engine](https://github.com/NobleRobot/NobleEngine) with
@@ -32,7 +32,7 @@ source/
     Utils.lua           Math + dotted-line helpers
     Ship.lua            Player ship (movement, wake particles, drawing)
     Enemy.lua           Chasing enemy ship
-    Cannonball.lua      Projectile
+    Tridentball.lua     Projectile
   libraries/
     noble/              Noble Engine   (fetched — see below)
     pdParticles.lua     pdParticles    (fetched — see below)
@@ -75,9 +75,9 @@ With the [Playdate SDK](https://play.date/dev/) installed (`pdc` on your `PATH`)
 
 ```sh
 bash tools/fetch-deps.sh          # once, to pull dependencies
-pdc source Cannonade.pdx          # compile
-open Cannonade.pdx                # macOS: opens in the Simulator
-# or: PlaydateSimulator Cannonade.pdx
+pdc source Tridentade.pdx         # compile
+open Tridentade.pdx               # macOS: opens in the Simulator
+# or: PlaydateSimulator Tridentade.pdx
 ```
 
 ## CI/CD
@@ -88,7 +88,7 @@ open Cannonade.pdx                # macOS: opens in the Simulator
 2. Runs `tools/fetch-deps.sh` to ensure Noble + pdParticles are present.
 3. Installs the SDK with [`pd-rs/get-playdate-sdk`](https://github.com/marketplace/actions/get-playdate-sdk),
    which puts `pdc` on the `PATH` and sets `$PLAYDATE_SDK_PATH`.
-4. Compiles with `pdc` and uploads `Cannonade.pdx.zip` as a build artifact.
+4. Compiles with `pdc` and uploads `Tridentade.pdx.zip` as a build artifact.
 
 Pushing a tag like `v1.0` additionally publishes the `.pdx.zip` to a GitHub Release.
 
@@ -110,5 +110,5 @@ If the `pd-rs/get-playdate-sdk@0.5.0` pin ever fails, try `@0.4` or `@latest`.
 
 ## Tuning
 
-Nearly every knob — world size, ship speed, turn feel, spawn ramp, cannon power —
+Nearly every knob — world size, ship speed, turn feel, spawn ramp, trident power —
 lives in `source/scripts/Config.lua`.
