@@ -110,12 +110,16 @@ function Enemy:updateLeash(shipX, shipY, dt)
 	end
 end
 
+-- Bakes the white bow "eye" dot into the cached body image alongside the
+-- hull -- see Ship:drawBodyLocal/buildBodyImage.
+function Enemy:drawBodyLocal(cx, cy)
+	Enemy.super.drawBodyLocal(self, cx, cy)
+	gfx.setColor(gfx.kColorWhite)
+	gfx.fillCircleAtPoint(cx + self.eyeOffset, cy, 2)
+end
+
 function Enemy:draw()
 	Enemy.super.draw(self)
-
-	local hx, hy = Utils.heading(self.heading)
-	gfx.setColor(gfx.kColorWhite)
-	gfx.fillCircleAtPoint(self.x + hx * self.eyeOffset, self.y + hy * self.eyeOffset, 2)
 
 	if self.health < self.maxHealth then
 		self:drawHealthBar()

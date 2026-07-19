@@ -129,14 +129,55 @@ function Ship:explode(windDirection)
 	return { sys = sys, age = 0, maxAge = cfg.maxAge }
 end
 
-function Ship:draw()
-	if not self.alive then return end
-	local p = rotatePts(self.hull, self.heading, self.x, self.y)
+-- Bounding radius (in local, unrotated space) of everything this ship draws
+-- into its cached body image -- see Ship:buildBodyImage. Subclasses that draw
+-- shapes further out than the hull (EnemyKraken's dots) should override this.
+function Ship:bodyRadius()
+	local r = 0
+	if self.hull then
+		for i = 1, #self.hull, 2 do
+			local d = math.sqrt(self.hull[i] * self.hull[i] + self.hull[i + 1] * self.hull[i + 1])
+			if d > r then r = d end
+		end
+	end
+	return r
+end
+
+-- Draws this ship's shape in local space (heading 0, i.e. pointing along +x)
+-- centered at (cx, cy). Called once by Ship:buildBodyImage rather than every
+-- frame. Subclasses that add extra fixed parts (Enemy's eye dot, Player's bow
+-- dot) should call the super implementation first, then draw their own piece
+-- at the same local offsets used in their live-space draw code.
+function Ship:drawBodyLocal(cx, cy)
+	local p = rotatePts(self.hull, 0, cx, cy)
 	gfx.setColor(self.color)
 	fillFan(p)
 	if self.outlineColor then
 		gfx.setColor(self.outlineColor)
 		gfx.setLineWidth(2)
-		strokeLoop(p) 
+		strokeLoop(p)
 	end
+end
+
+-- Bakes drawBodyLocal into an image once, so per-frame drawing (Ship:draw)
+-- is a single rotated image blit instead of re-rotating every hull point and
+-- re-filling the polygon from scratch each frame. Built lazily on first draw
+-- and cached on the instance.
+function Ship:buildBodyImage()
+	local pad = 3 -- headroom for the 2px outline stroke
+	local r = math.ceil(self:bodyRadius()) + pad
+	local size = r * 2
+	local img = gfx.image.new(size, size)
+
+	gfx.pushContext(img)
+	self:drawBodyLocal(r, r)
+	gfx.popContext()
+
+	self.bodyImage = img
+end
+
+function Ship:draw()
+	if not self.alive then return end
+	if not self.bodyImage then self:buildBodyImage() end
+	self.bodyImage:drawRotated(self.x, self.y, self.heading)
 end

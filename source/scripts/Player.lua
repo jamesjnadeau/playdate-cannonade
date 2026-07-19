@@ -145,6 +145,14 @@ function Player:hit(damage)
 	return true
 end
 
+-- Bakes the small bow dot into the cached body image alongside the hull --
+-- see Ship:drawBodyLocal/buildBodyImage.
+function Player:drawBodyLocal(cx, cy)
+	Player.super.drawBodyLocal(self, cx, cy)
+	gfx.setColor(self.outlineColor)
+	gfx.fillCircleAtPoint(cx + 3, cy, 3)
+end
+
 function Player:drawSail()
 	local hx, hy = Utils.heading(self.sailAngle)
 	local tipX, tipY = self.x + hx * Config.SAIL_LENGTH, self.y + hy * Config.SAIL_LENGTH
@@ -165,7 +173,4 @@ function Player:draw()
 	end
 	Player.super.draw(self)
 	self:drawSail()
-
-	local hx, hy = Utils.heading(self.heading)
-	gfx.fillCircleAtPoint(self.x + hx * 3, self.y + hy * 3, 3)
 end

@@ -2,13 +2,12 @@
 -- A slow, tougher Enemy variant with a round body instead of a ship hull.
 -- Draws its own body + a chevron of 3 small circles ahead of it, doubling
 -- as a direction indicator in place of the base Enemy's bow eye-dot
--- (see EnemyKraken:draw, which overrides Enemy:draw/Ship:draw entirely rather
--- than filling a self.hull polygon). All tuning lives in Config.ENEMY_KRAKEN_*
--- (see ConfigEnemy.lua).
+-- (see EnemyKraken:drawBodyLocal/bodyRadius, which override Ship's hull-based
+-- versions instead of filling a self.hull polygon). All tuning lives in
+-- Config.ENEMY_KRAKEN_* (see ConfigEnemy.lua).
 
 import "scripts/Config"
 import "scripts/ConfigEnemy"
-import "scripts/Utils"
 import "scripts/Enemy"
 
 local gfx <const> = playdate.graphics
@@ -42,34 +41,40 @@ function EnemyKraken:init(x, y, heading)
 	self.damage = Config.ENEMY_KRAKEN_DAMAGE
 end
 
-function EnemyKraken:draw()
-	if not self.alive then return end
+-- Bounding radius of the body circle + the furthest chevron dot -- see
+-- Ship:bodyRadius/buildBodyImage.
+function EnemyKraken:bodyRadius()
+	local dotReach = Config.ENEMY_KRAKEN_DOT_OFFSET + Config.ENEMY_KRAKEN_DOT_SPACING + Config.ENEMY_KRAKEN_DOT_RADIUS
+	return math.max(Config.ENEMY_KRAKEN_BODY_RADIUS, dotReach)
+end
 
+-- Same body-circle + chevron-of-dots shape as before, just drawn in local
+-- space (heading 0 = pointing along +x) so it can be baked into the cached,
+-- per-frame-rotated body image -- see Ship:drawBodyLocal/buildBodyImage.
+-- 5 small circles: a chevron of 3 ahead of the body -- one at the tip and
+-- two swept back to either side -- reading as an arrow pointing along the
+-- heading, plus 2 more flanking the body itself on its left/right sides.
+function EnemyKraken:drawBodyLocal(cx, cy)
 	gfx.setColor(self.color)
-	gfx.fillCircleAtPoint(self.x, self.y, Config.ENEMY_KRAKEN_BODY_RADIUS)
+	gfx.fillCircleAtPoint(cx, cy, Config.ENEMY_KRAKEN_BODY_RADIUS)
 	if self.outlineColor then
 		gfx.setColor(self.outlineColor)
 		gfx.setLineWidth(2)
-		gfx.drawCircleAtPoint(self.x, self.y, Config.ENEMY_KRAKEN_BODY_RADIUS)
+		gfx.drawCircleAtPoint(cx, cy, Config.ENEMY_KRAKEN_BODY_RADIUS)
 	end
 
-	-- 5 small circles: a chevron of 3 ahead of the body -- one at the tip and
-	-- two swept back to either side -- reading as an arrow pointing along the
-	-- heading, plus 2 more flanking the body itself on its left/right sides.
-	local hx, hy = Utils.heading(self.heading)
-	local px, py = -hy, hx -- perpendicular to heading
 	gfx.setColor(self.color)
 	local tipDist = Config.ENEMY_KRAKEN_DOT_OFFSET + Config.ENEMY_KRAKEN_DOT_SPACING
-	gfx.fillCircleAtPoint(self.x + hx * tipDist, self.y + hy * tipDist, Config.ENEMY_KRAKEN_DOT_RADIUS)
+	gfx.fillCircleAtPoint(cx + tipDist, cy, Config.ENEMY_KRAKEN_DOT_RADIUS)
 	for _, side in ipairs({ -1, 1 }) do
-		local wx = self.x + hx * Config.ENEMY_KRAKEN_DOT_OFFSET + px * side * Config.ENEMY_KRAKEN_DOT_SPACING
-		local wy = self.y + hy * Config.ENEMY_KRAKEN_DOT_OFFSET + py * side * Config.ENEMY_KRAKEN_DOT_SPACING
-		gfx.fillCircleAtPoint(wx, wy, Config.ENEMY_KRAKEN_DOT_RADIUS)
-
-		local sx = self.x + px * side * Config.ENEMY_KRAKEN_DOT_OFFSET
-		local sy = self.y + py * side * Config.ENEMY_KRAKEN_DOT_OFFSET
-		gfx.fillCircleAtPoint(sx, sy, Config.ENEMY_KRAKEN_DOT_RADIUS)
+		gfx.fillCircleAtPoint(cx + Config.ENEMY_KRAKEN_DOT_OFFSET, cy + side * Config.ENEMY_KRAKEN_DOT_SPACING,
+			Config.ENEMY_KRAKEN_DOT_RADIUS)
+		gfx.fillCircleAtPoint(cx, cy + side * Config.ENEMY_KRAKEN_DOT_OFFSET, Config.ENEMY_KRAKEN_DOT_RADIUS)
 	end
+end
+
+function EnemyKraken:draw()
+	Ship.draw(self)
 
 	if self.health < self.maxHealth then
 		self:drawHealthBar()
