@@ -13,6 +13,7 @@ import "scripts/Enemy"
 import "scripts/EnemySwordfish"
 import "scripts/EnemyKraken"
 import "scripts/Tridentball"
+import "scripts/Sound"
 
 local gfx <const> = playdate.graphics
 
@@ -285,6 +286,7 @@ function GameScene:releaseCharge(side)
 		local bx = ship.x + hx * (Config.SHIP_LENGTH + 4)
 		local by = ship.y + hy * (Config.SHIP_LENGTH + 4)
 		self.tridentballs[#self.tridentballs + 1] = Tridentball(bx, by, dir, speed)
+		Sound.playTridentWhoosh()
 	end
 
 	self.chargingSide = nil

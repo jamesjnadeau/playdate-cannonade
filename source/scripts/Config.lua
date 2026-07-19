@@ -143,6 +143,23 @@ Config.AIM_LINE_WIDTH   = 2     -- stroke thickness (px) of the aim-indicator li
 Config.NO_TARGET_MARK_SIZE   = 16 -- pixel height of the "?" shown when charging with nothing in range
 Config.NO_TARGET_MARK_OFFSET = 30 -- distance (px) from the ship's center to that mark
 
+-----------
+-- Sound --
+-----------
+-- Trident-launch whoosh: synthesized (no audio assets), see Sound.lua. A
+-- noise burst run through a bandpass filter whose center frequency sweeps
+-- up then back down, giving a "rushing past" pitch shape.
+Config.SOUND_WHOOSH_VOLUME    = 0.7  -- 0-1
+Config.SOUND_WHOOSH_LENGTH    = 0.3  -- seconds, passed to synth:playNote
+Config.SOUND_WHOOSH_ATTACK    = 0.01 -- seconds, noise burst fade-in
+Config.SOUND_WHOOSH_DECAY     = 0.12 -- seconds, noise burst fade-out (sustain is 0, so decay is effectively the whole tail)
+Config.SOUND_WHOOSH_RELEASE   = 0.08 -- seconds
+Config.SOUND_WHOOSH_FILTER_RESONANCE = 0.45 -- 0-1, higher = more "whistle", risks self-oscillation near 1
+Config.SOUND_WHOOSH_SWEEP_ATTACK  = 0.015 -- seconds for the filter sweep to reach its peak frequency
+Config.SOUND_WHOOSH_SWEEP_DECAY   = 0.22  -- seconds for the filter sweep to fall back off
+Config.SOUND_WHOOSH_SWEEP_MIN_HZ  = 300   -- filter center frequency at the start/end of the sweep
+Config.SOUND_WHOOSH_SWEEP_RANGE_HZ = 2200 -- how far above SWEEP_MIN_HZ the sweep peaks
+
 ---------
 -- HUD --
 ---------
