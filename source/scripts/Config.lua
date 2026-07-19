@@ -160,6 +160,14 @@ Config.SOUND_WHOOSH_SWEEP_DECAY   = 0.22  -- seconds for the filter sweep to fal
 Config.SOUND_WHOOSH_SWEEP_MIN_HZ  = 300   -- filter center frequency at the start/end of the sweep
 Config.SOUND_WHOOSH_SWEEP_RANGE_HZ = 2200 -- how far above SWEEP_MIN_HZ the sweep peaks
 
+-----------
+-- Music --
+-----------
+-- MidiPlayer.lua / Patches.lua: synthesized .mid playback (no bundled songs
+-- yet -- see MidiPlayer.load's doc comment for the song table shape).
+Config.MUSIC_VOLUME = 0.6     -- 0-1, master volume applied to every loaded track's instrument. Changing this at runtime needs a MidiPlayer.applyVolume() call to take effect immediately.
+Config.MUSIC_MAX_VOICES = 8   -- voices stacked per melodic instrument (so chords don't cut each other's notes), capped here so a dense/chordal track can't eat the whole DSP budget
+
 ---------
 -- HUD --
 ---------
