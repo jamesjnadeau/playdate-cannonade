@@ -20,6 +20,7 @@ local gfx <const> = playdate.graphics
 ---@field levelSpawned number enemies spawned so far this level
 ---@field levelTarget number levelKills needed to clear the level
 ---@field levelComplete boolean
+---@field levelCompleteTimer number|nil seconds left to hold on the cleared level before onLevelComplete fires; nil once it has fired, see tickGame
 GameSceneMain = class("GameSceneMain").extends(GameScene) or GameSceneMain
 
 -- Class-level self-reference read by the shared AButtonDown restart handler
@@ -55,6 +56,7 @@ function GameSceneMain:resetGame(sceneProperties)
 	self.levelSpawned = 0                           -- enemies spawned so far this level
 	self.levelTarget = self.level * Config.LEVEL_ENEMY_STEP
 	self.levelComplete = false
+	self.levelCompleteTimer = 0
 end
 
 -- How many wind-escalation steps have landed by the given level, per
@@ -120,14 +122,26 @@ function GameSceneMain:enemyDefeated()
 	self.levelKills = self.levelKills + 1
 end
 
--- Level clears once enough enemies have been defeated; hand off to
--- onLevelComplete below.
+-- Level clears once enough enemies have been defeated. Gameplay freezes
+-- immediately (the levelComplete guard below skips the super call), but
+-- onLevelComplete doesn't fire until levelCompleteTimer counts down from
+-- Config.LEVEL_COMPLETE_DELAY. levelCompleteTimer is set to nil the moment
+-- it fires so this only ever happens once per level, even with a delay of 0.
 function GameSceneMain:tickGame()
-	if self.levelComplete then return end
+	if self.levelComplete then
+		if self.levelCompleteTimer ~= nil then
+			self.levelCompleteTimer = self.levelCompleteTimer - Config.DT
+			if self.levelCompleteTimer <= 0 then
+				self.levelCompleteTimer = nil
+				self:onLevelComplete()
+			end
+		end
+		return
+	end
 	GameSceneMain.super.tickGame(self)
 	if self.levelKills >= self.levelTarget then
 		self.levelComplete = true
-		self:onLevelComplete()
+		self.levelCompleteTimer = Config.LEVEL_COMPLETE_DELAY
 	end
 end
 

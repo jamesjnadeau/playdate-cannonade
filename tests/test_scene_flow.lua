@@ -344,7 +344,12 @@ function TestSceneFlow:testGameSceneMainLevelClearTransitionsToLevelComplete()
 	for _ = 1, Config.LEVEL_ENEMY_STEP do
 		scene:enemyDefeated()
 	end
-	scene:tickGame()
+	-- Clearing the level starts levelCompleteTimer (Config.LEVEL_COMPLETE_DELAY)
+	-- rather than transitioning on the spot -- see GameSceneMain:tickGame.
+	local levelCompleteTicks = math.ceil(Config.LEVEL_COMPLETE_DELAY / Config.DT) + 2
+	for _ = 1, levelCompleteTicks do
+		scene:tickGame()
+	end
 
 	lu.assertEquals(currentClassName(), "LevelCompleteScene")
 	local nextScene = Noble.currentScene()
@@ -455,7 +460,11 @@ function TestSceneFlow:testGameSceneDemoBelowCapContinuesLikeGameSceneMain()
 	for _ = 1, scene.levelTarget do
 		scene:enemyDefeated()
 	end
-	scene:tickGame()
+	-- See the levelCompleteTimer note in testGameSceneMainLevelClearTransitionsToLevelComplete above.
+	local levelCompleteTicks = math.ceil(Config.LEVEL_COMPLETE_DELAY / Config.DT) + 2
+	for _ = 1, levelCompleteTicks do
+		scene:tickGame()
+	end
 
 	lu.assertEquals(currentClassName(), "LevelCompleteScene")
 	lu.assertEquals(Noble.currentScene().gameScene, GameSceneDemo)
@@ -468,7 +477,11 @@ function TestSceneFlow:testGameSceneDemoAtCapEndsViaDemoOverSceneThenBackToTitle
 	for _ = 1, scene.levelTarget do
 		scene:enemyDefeated()
 	end
-	scene:tickGame()
+	-- See the levelCompleteTimer note in testGameSceneMainLevelClearTransitionsToLevelComplete above.
+	local levelCompleteTicks = math.ceil(Config.LEVEL_COMPLETE_DELAY / Config.DT) + 2
+	for _ = 1, levelCompleteTicks do
+		scene:tickGame()
+	end
 
 	lu.assertEquals(currentClassName(), "DemoOverScene")
 	local demoOver = Noble.currentScene()

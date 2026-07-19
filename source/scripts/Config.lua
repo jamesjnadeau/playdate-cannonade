@@ -199,6 +199,11 @@ Config.WIND_BAR_WAVE_SPEED      = 40  -- px/s the wave crawls sideways
 -- since that level began (level 1 -> 5, level 2 -> 10, ...).
 Config.LEVEL_ENEMY_STEP = 3
 
+-- Seconds GameSceneMain:tickGame holds on the just-cleared level (gameplay
+-- frozen, see the levelComplete guard) before handing off to
+-- onLevelComplete/LevelCompleteScene.
+Config.LEVEL_COMPLETE_DELAY = 3
+
 -- Wind gets both twitchier and more frequent as levels climb (see
 -- GameSceneMain:windTuning), but not on every level -- it steps up once every
 -- LEVEL_WIND_STEP_INTERVAL levels (2 = every other level: 1, 3, 5, ... step
