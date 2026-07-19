@@ -1,5 +1,15 @@
 # Working in this repo
 
+## Response Notes
+
+Please end your summaries with a suggested commit message for git.
+
+If your change touches which scene the game boots into (`Config.START_SCENE`,
+`main.lua`'s `sceneByName`, or `tools/simulate.sh`), ask whether the user
+wants to run the Simulator with `MERMAID_START_SCENE` set to a scene that
+makes testing the change easy, e.g. `MERMAID_START_SCENE=GameMain bash
+tools/simulate.sh`.
+
 ## Build/run verification
 
 Don't try to locate or run the Playdate SDK compiler (`pdc`) or launch the
@@ -151,14 +161,17 @@ so a stale diagram and a stale test tend to go stale together — update both.
 
 ## `tools/`
 
-- **`build.sh`** — `$PLAYDATE_SDK_PATH/bin/pdc source MermaindMadness.pdx`.
+- **`build.sh`** — `$PLAYDATE_SDK_PATH/bin/pdc source MermaidMadness.pdx`.
   Compiles `source/` into the `.pdx` bundle. Requires `PLAYDATE_SDK_PATH` to
   be set and `fetch-deps.sh` to have been run first (`pdc` will fail on
   missing `import`s otherwise). Per the build/run-verification note above,
   this is for the user to run, not something to invoke to check your own work.
-- **`simulate.sh`** — `$PLAYDATE_SDK_PATH/bin/PlaydateSimulator MermaindMadness.pdx`.
+- **`simulate.sh`** — `$PLAYDATE_SDK_PATH/bin/PlaydateSimulator MermaidMadness.pdx`.
   Launches the compiled bundle in the Playdate Simulator. Same caveat as
-  `build.sh`: the user runs this themselves.
+  `build.sh`: the user runs this themselves. If `MERMAID_START_SCENE` is set
+  in the environment, forwards it as a launch argument so `main.lua` can pick
+  a non-default boot scene — see `Config.START_SCENE` in
+  `source/scripts/Config.lua` and the "Response Notes" section above.
 - **`fetch-deps.sh`** — pulls the two vendored dependencies into
   `source/libraries/` if they aren't already present: Noble Engine (git clone)
   and pdParticles + playout (curl'd single files). Idempotent — safe to

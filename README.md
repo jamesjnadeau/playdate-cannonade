@@ -75,9 +75,9 @@ With the [Playdate SDK](https://play.date/dev/) installed (`pdc` on your `PATH`)
 
 ```sh
 bash tools/fetch-deps.sh          # once, to pull dependencies
-pdc source Tridentade.pdx         # compile
-open Tridentade.pdx               # macOS: opens in the Simulator
-# or: PlaydateSimulator Tridentade.pdx
+pdc source MermaidMadness.pdx         # compile
+open MermaidMadness.pdx               # macOS: opens in the Simulator
+# or: PlaydateSimulator MermaidMadness.pdx
 ```
 
 ## CI/CD
@@ -88,7 +88,7 @@ open Tridentade.pdx               # macOS: opens in the Simulator
 2. Runs `tools/fetch-deps.sh` to ensure Noble + pdParticles are present.
 3. Installs the SDK with [`pd-rs/get-playdate-sdk`](https://github.com/marketplace/actions/get-playdate-sdk),
    which puts `pdc` on the `PATH` and sets `$PLAYDATE_SDK_PATH`.
-4. Compiles with `pdc` and uploads `Tridentade.pdx.zip` as a build artifact.
+4. Compiles with `pdc` and uploads `MermaidMadness.pdx.zip` as a build artifact.
 
 Pushing a tag like `v1.0` additionally publishes the `.pdx.zip` to a GitHub Release.
 

@@ -1,5 +1,5 @@
 -- main.lua
--- Tridentade — a top-down pirate sailing game for Playdate.
+-- Mermaid Madness — a top-down pirate sailing game for Playdate.
 -- Built on Noble Engine (scenes/input/transitions) + pdParticles (wake/explosions).
 
 import "CoreLibs/graphics"
@@ -38,5 +38,28 @@ import "scenes/WindShiftScene"
 -- Lock to a fixed 30fps so our fixed-timestep (Config.DT) matches wall-clock.
 playdate.display.setRefreshRate(Config.REFRESH)
 
--- Boot the engine, starting on the title screen.
-Noble.new(TitleScene)
+-- Which scene to boot into: Config.START_SCENE, unless overridden via the
+-- MERMAID_START_SCENE environment variable (see tools/simulate.sh, which
+-- forwards it as a Simulator launch argument since the Lua sandbox has no
+-- os.getenv -- playdate.argv[1] is where that argument lands).
+local sceneByName = {
+	Title = TitleScene,
+	Instructions = InstructionsScene,
+	Settings = SettingsScene,
+	GameMain = GameSceneMain,
+	GameTest = GameSceneTest,
+	EnemySelect = EnemySelectScene,
+	LevelComplete = LevelCompleteScene,
+	UpgradeSelect = UpgradeSelectScene,
+	WindShift = WindShiftScene,
+}
+
+local startSceneName = playdate.argv[1] or Config.START_SCENE
+local StartScene = sceneByName[startSceneName]
+if not StartScene then
+	print("Config.START_SCENE/MERMAID_START_SCENE: unknown scene '" .. tostring(startSceneName) .. "', falling back to Title")
+	StartScene = TitleScene
+end
+
+-- Boot the engine.
+Noble.new(StartScene)

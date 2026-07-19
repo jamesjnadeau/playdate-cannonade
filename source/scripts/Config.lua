@@ -193,4 +193,17 @@ Config.LEVEL_WIND_SPEED_CHANGE_RATE_STEP = 0.3 -- px/s per second added to the w
 Config.LEVEL_WIND_CHANGE_INTERVAL_STEP   = 0.75 -- seconds shaved off the time between wind changes, per step
 Config.WIND_CHANGE_INTERVAL_FLOOR        = 4   -- seconds; LEVEL_WIND_CHANGE_INTERVAL_STEP won't shrink the interval past this
 
+----------
+-- Boot --
+----------
+-- Which scene the game boots into (see main.lua's sceneByName table for the
+-- full list of valid names). Defaults to the title screen.
+--
+-- Playdate's Lua sandbox has no os.getenv, so this can't be read from an
+-- environment variable directly: override it for local testing via the
+-- MERMAID_START_SCENE environment variable when running tools/simulate.sh,
+-- which forwards it to the Simulator as a launch argument; main.lua reads it
+-- back out of playdate.argv[1] and falls back to this default if unset.
+Config.START_SCENE = "Title"
+
 return Config
