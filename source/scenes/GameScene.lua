@@ -6,9 +6,11 @@
 -- and drawModeStatus() below. This class is never instantiated directly.
 
 import "scripts/Config"
+import "scripts/ConfigEnemy"
 import "scripts/Utils"
 import "scripts/Player"
 import "scripts/Enemy"
+import "scripts/EnemySwordfish"
 import "scripts/Tridentball"
 
 local gfx <const> = playdate.graphics
@@ -78,14 +80,20 @@ function GameScene:resetGame(sceneProperties)
 	self.score = 0
 	self.gameOver = false
 
+	local wind = self:windTuning()
+	self.windSpeedChangeRateMin = wind.speedChangeRateMin
+	self.windSpeedChangeRateMax = wind.speedChangeRateMax
+	self.windChangeIntervalMin = wind.changeIntervalMin
+	self.windChangeIntervalMax = wind.changeIntervalMax
+
 	self.windDirection = math.random() * 360
 	self.windDirectionTarget = self.windDirection
 	self.windDirectionChangeRate = Config.WIND_DIRECTION_CHANGE_RATE_MIN
 	self.windSpeed = Config.WIND_SPEED_MIN + math.random() * (Config.WIND_SPEED_MAX - Config.WIND_SPEED_MIN)
 	self.windSpeedTarget = self.windSpeed
-	self.windSpeedChangeRate = Config.WIND_SPEED_CHANGE_RATE_MIN
-	self.windChangeIntervalDuration = Config.WIND_CHANGE_INTERVAL_MIN
-		+ math.random() * (Config.WIND_CHANGE_INTERVAL_MAX - Config.WIND_CHANGE_INTERVAL_MIN)
+	self.windSpeedChangeRate = self.windSpeedChangeRateMin
+	self.windChangeIntervalDuration = self.windChangeIntervalMin
+		+ math.random() * (self.windChangeIntervalMax - self.windChangeIntervalMin)
 	self.windChangeTimer = self.windChangeIntervalDuration
 
 	-- Counts up (0 -> windEaseDuration) while the wind is easing toward its
@@ -101,6 +109,19 @@ function GameScene:resetGame(sceneProperties)
 	self.chargingSide = nil
 	self.charge = 0
 	self.target = nil
+end
+
+-- Wind speed's easing rate and how often it changes, in {speedChangeRateMin,
+-- speedChangeRateMax, changeIntervalMin, changeIntervalMax}. Plain Config
+-- defaults here; GameSceneMain overrides this to scale both with level, the
+-- same way it scales levelTarget off Config.LEVEL_ENEMY_STEP.
+function GameScene:windTuning()
+	return {
+		speedChangeRateMin = Config.WIND_SPEED_CHANGE_RATE_MIN,
+		speedChangeRateMax = Config.WIND_SPEED_CHANGE_RATE_MAX,
+		changeIntervalMin = Config.WIND_CHANGE_INTERVAL_MIN,
+		changeIntervalMax = Config.WIND_CHANGE_INTERVAL_MAX,
+	}
 end
 
 -- ---------------------------------------------------------------------------
@@ -225,10 +246,19 @@ end
 -- Enemies
 -- ---------------------------------------------------------------------------
 
--- Spawns one enemy at a random position around the ship. Returns whether it
--- actually spawned one (false if already at MAX_ENEMIES). Subclasses that
--- gate spawning further (e.g. a per-level cap) should override this, check
--- their own condition, then delegate to GameScene.super.spawnEnemy(self).
+-- Enemy classes eligible for random spawning, gated by level via each
+-- class's minLevel (Enemy.minLevel / EnemySwordfish.minLevel, driven by
+-- Config.ENEMY_MIN_LEVEL / Config.ENEMY_SWORDFISH_MIN_LEVEL). Add new enemy
+-- types here to fold them into spawnEnemy's random pick below.
+GameScene.enemyTypes = { Enemy, EnemySwordfish }
+
+-- Spawns one enemy at a random position around the ship, picking uniformly
+-- among GameScene.enemyTypes entries unlocked at self.level (self.level is
+-- nil for scenes without level progression, e.g. GameSceneTest -- treated as
+-- level 1). Returns whether it actually spawned one (false if already at
+-- MAX_ENEMIES). Subclasses that gate spawning further (e.g. a per-level cap)
+-- should override this, check their own condition, then delegate to
+-- GameScene.super.spawnEnemy(self).
 function GameScene:spawnEnemy()
 	if #self.enemies >= Config.MAX_ENEMIES then return false end
 	local ship = self.ship
@@ -238,7 +268,16 @@ function GameScene:spawnEnemy()
 	local ex = ship.x + ax * dist
 	local ey = ship.y + ay * dist
 	local facing = Utils.angleTo(ex, ey, ship.x, ship.y)
-	self.enemies[#self.enemies + 1] = Enemy(ex, ey, facing)
+
+	local level = self.level or 1
+	local eligible = {}
+	for _, EnemyType in ipairs(GameScene.enemyTypes) do
+		if level >= EnemyType.minLevel then
+			eligible[#eligible + 1] = EnemyType
+		end
+	end
+	local EnemyType = eligible[math.random(#eligible)]
+	self.enemies[#self.enemies + 1] = EnemyType(ex, ey, facing)
 	return true
 end
 
@@ -292,8 +331,8 @@ function GameScene:tickGame()
 	if windSettled and self.windChangeTimer <= 0 then
 		self.windSpeedTarget = Config.WIND_SPEED_MIN
 			+ math.random() * (Config.WIND_SPEED_MAX - Config.WIND_SPEED_MIN)
-		self.windSpeedChangeRate = Config.WIND_SPEED_CHANGE_RATE_MIN
-			+ math.random() * (Config.WIND_SPEED_CHANGE_RATE_MAX - Config.WIND_SPEED_CHANGE_RATE_MIN)
+		self.windSpeedChangeRate = self.windSpeedChangeRateMin
+			+ math.random() * (self.windSpeedChangeRateMax - self.windSpeedChangeRateMin)
 
 		local shift = Config.WIND_DIRECTION_CHANGE_MIN
 			+ math.random() * (Config.WIND_DIRECTION_CHANGE_MAX - Config.WIND_DIRECTION_CHANGE_MIN)
@@ -302,8 +341,8 @@ function GameScene:tickGame()
 		self.windDirectionChangeRate = Config.WIND_DIRECTION_CHANGE_RATE_MIN
 			+ math.random() * (Config.WIND_DIRECTION_CHANGE_RATE_MAX - Config.WIND_DIRECTION_CHANGE_RATE_MIN)
 
-		self.windChangeIntervalDuration = Config.WIND_CHANGE_INTERVAL_MIN
-			+ math.random() * (Config.WIND_CHANGE_INTERVAL_MAX - Config.WIND_CHANGE_INTERVAL_MIN)
+		self.windChangeIntervalDuration = self.windChangeIntervalMin
+			+ math.random() * (self.windChangeIntervalMax - self.windChangeIntervalMin)
 		self.windChangeTimer = self.windChangeIntervalDuration
 
 		-- The countdown (windChangeTimer) freezes until speed and direction
@@ -361,7 +400,7 @@ function GameScene:tickGame()
 			self:addExplosion(e)
 			table.remove(self.enemies, i)
 			self:enemyDefeated()
-			if ship:hit(Config.ENEMY_DAMAGE) and ship.health <= 0 then
+			if ship:hit(e.damage) and ship.health <= 0 then
 				self.gameOver = true
 			end
 		end

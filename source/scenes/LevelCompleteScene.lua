@@ -1,6 +1,8 @@
 -- LevelCompleteScene.lua
 -- Interstitial shown after clearing a level: reports the running defeated
 -- total, then hands off to GameSceneMain for the next level with health reset.
+-- If the next level also lands a wind escalation step (see
+-- GameSceneMain.windStepForLevel), routes through WindShiftScene first.
 
 import "scripts/Config"
 
@@ -32,8 +34,12 @@ end
 LevelCompleteScene.inputHandler = {
 	AButtonDown = function()
 		if scene then
-			Noble.transition(GameSceneMain, nil, nil, nil, {
-				level = scene.completedLevel + 1,
+			local nextLevel = scene.completedLevel + 1
+			local windStepped = GameSceneMain.windStepForLevel(nextLevel)
+				> GameSceneMain.windStepForLevel(scene.completedLevel)
+			local nextScene = windStepped and WindShiftScene or GameSceneMain
+			Noble.transition(nextScene, nil, nil, nil, {
+				level = nextLevel,
 				totalDefeated = scene.totalDefeated,
 			})
 		end

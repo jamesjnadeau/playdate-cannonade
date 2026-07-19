@@ -5,13 +5,17 @@ local gfx <const> = playdate.graphics
 
 Config = {}
 
--- Display -------------------------------------------------------------------
+-------------
+-- Display --
+-------------
 Config.SCREEN_W   = 400
 Config.SCREEN_H   = 240
 Config.REFRESH    = 30          -- we lock to 30fps and use a fixed timestep
 Config.DT         = 1 / 30
 
--- World ---------------------------------------------------------------------
+-----------
+-- World --
+-----------
 -- The sea is infinite and all coordinates are player-centered: the camera
 -- always centers on the ship and nothing clamps its position.
 Config.WATER_GRID = 80             -- spacing of the drawn water speckle grid
@@ -25,7 +29,9 @@ Config.WATER_WAVELET_ZIGZAGS_MIN = 1 -- fewest up/down cycles along each wavelet
 Config.WATER_WAVELET_ZIGZAGS_MAX = 3 -- most up/down cycles along each wavelet
 Config.WATER_WAVELET_SPAWN_CHANCE = 0.35 -- chance (0-1) any given wavelet slot draws one at all
 
--- Wind --------------------------------------------------------------------
+----------
+-- Wind --
+----------
 -- Direction is the angle the wind blows TOWARD (same convention as heading).
 -- Every WIND_CHANGE_INTERVAL_MIN..MAX seconds a new random change fires: it
 -- picks a new target speed in WIND_SPEED_MIN..MAX, eases toward it at a rate
@@ -51,7 +57,9 @@ Config.WIND_INDICATOR_SIZE = 20
 -- Player:update.
 Config.WAKE_WIND_INFLUENCE = 0.2
 
--- Explosions ------------------------------------------------------------------
+----------------
+-- Explosions --
+----------------
 -- Each field maps to one pdParticles ParticleCircle setter (see Ship:explode).
 -- Ship.explosionConfig is the default every ship inherits; a subclass can
 -- overwrite the whole table or just a field to get its own look.
@@ -71,7 +79,9 @@ Config.EXPLOSION = {
 -- spread arc is fully re-centered on the wind direction). See Ship:explode.
 Config.EXPLOSION_WIND_INFLUENCE = 0.4
 
--- Ship ----------------------------------------------------------------------
+----------
+-- Ship --
+----------
 -- set max ship speed to half way between min/max wind speed
 Config.SHIP_MAX_SPEED = math.floor((Config.WIND_SPEED_MAX - Config.WIND_SPEED_MIN)/2) + Config.WIND_SPEED_MIN     -- pixels / second
 Config.SHIP_DEFAULT_SPEED = math.floor(Config.SHIP_MAX_SPEED * 0.1 )    -- guaranteed baseline forward speed regardless of sail/wind
@@ -93,7 +103,9 @@ Config.SHIP_WATER_FRICTION = 0.05
 -- regular water friction above -- see Ship:updateSpeed.
 Config.SHIP_OVERSPEED_FRICTION = 0.025
 
--- Sail ------------------------------------------------------------------
+----------
+-- Sail --
+----------
 -- Up/Down let the sail out / trim it in (0 = trimmed in, 1 = fully out).
 Config.SAIL_TRIM_START = 0.5  -- trim the player starts each run with
 Config.SAIL_TRIM_RATE  = 1.2  -- trim units / second while Up/Down is held
@@ -111,43 +123,9 @@ Config.SAIL_SWING_SPEED    = 110
 Config.SAIL_SWING_FRICTION = 5
 
 
-
--- Enemies -------------------------------------------------------------------
-Config.ENEMY_SPEED      = math.floor(Config.SHIP_MAX_SPEED * 0.75 )    -- pixels / second (should be slower than you at full sail)
--- Turn rate falls off linearly from TURN_RATE_MAX (at rest) to TURN_RATE_MIN
--- (at or above the "max speed" used for the falloff) as an enemy's current
--- speed rises -- see Enemy:update. That reference "max speed" is
--- ENEMY_SPEED * ENEMY_TURN_RATE_SPEED_MULTIPLIER, not ENEMY_SPEED directly,
--- so the falloff curve can be tuned independent of ENEMY_SPEED itself (e.g.
--- < 1 makes them lose turn rate well before reaching their target speed,
--- > 1 delays the falloff past it -- speed can exceed ENEMY_SPEED thanks to
--- wind push, up to SHIP_MAX_SPEED before overspeed friction bites).
-Config.ENEMY_TURN_RATE_MAX  = 80   -- degrees / second they can rotate toward you at low speed
-Config.ENEMY_TURN_RATE_MIN  = 20   -- degrees / second they can rotate toward you at/above max speed
-Config.ENEMY_TURN_RATE_SPEED_MULTIPLIER = 1.0   -- multiplier on ENEMY_SPEED giving the speed at which turn rate bottoms out
-Config.ENEMY_SPAWN_DIST = 300   -- how far off-screen they appear, from ship
-Config.ENEMY_DAMAGE     = 1
-Config.ENEMY_LENGTH    = 20      -- half-length of hull when drawn, default 22
-Config.ENEMY_BEAM      = 8       -- half-width of hull when drawn
-Config.ENEMY_RADIUS     = Config.ENEMY_LENGTH
-Config.ENEMY_WIND_MULTIPLIER = 0.1 -- enemies have no sails: wind just adds a straight push of windSpeed * this, in the wind's direction, on top of their steering speed
-Config.ENEMY_ACCEL      = 60    -- pixels/second, added per second while easing toward ENEMY_SPEED (see Ship:updateSpeed)
-
--- With an infinite world an enemy that loses the player would otherwise
--- chase forever; past ENEMY_MAX_DISTANCE it's flagged for relocation, warned
--- for ENEMY_TELEPORT_WARN_TIME seconds (see the off-screen indicator), then
--- teleported to the opposite side of the player at the same distance so it
--- stays an active threat instead of trailing off into the distance.
-Config.ENEMY_MAX_DISTANCE      = 900
-Config.ENEMY_TELEPORT_WARN_TIME = 3     -- seconds of countdown warning before relocation
-
--- Difficulty ramp: spawn interval shrinks from START to FLOOR over RAMP seconds
-Config.SPAWN_INTERVAL_START = 2.6
-Config.SPAWN_INTERVAL_FLOOR = 0.55
-Config.SPAWN_RAMP_SECONDS   = 90
-Config.MAX_ENEMIES          = 40
-
--- Trident -------------------------------------------------------------------
+-------------
+-- Trident --
+-------------
 Config.TRIDENT_CHARGE_RATE      = 0.5   -- charge units / second (held), clamps at 1.0
 Config.TRIDENT_SPEED     = 420   -- projectile speed, fixed regardless of charge
 Config.TRIDENT_MAX_SPREAD = 40   -- degrees of random aim error at 0 charge
@@ -164,7 +142,9 @@ Config.AIM_LINE_WIDTH   = 2     -- stroke thickness (px) of the aim-indicator li
 Config.NO_TARGET_MARK_SIZE   = 16 -- pixel height of the "?" shown when charging with nothing in range
 Config.NO_TARGET_MARK_OFFSET = 30 -- distance (px) from the ship's center to that mark
 
--- HUD -------------------------------------------------------------------
+---------
+-- HUD --
+---------
 -- Off-screen enemy indicators: enemies whose on-screen directions fall
 -- within OFFSCREEN_INDICATOR_GROUP_ANGLE of each other share a single arrow
 -- (with a count badge) instead of stacking separate ones.
@@ -189,9 +169,25 @@ Config.WIND_BAR_WAVE_AMPLITUDE  = 3   -- px the wave bulges above/below its base
 Config.WIND_BAR_WAVE_WAVELENGTH = 20  -- px length of one full wave cycle
 Config.WIND_BAR_WAVE_SPEED      = 40  -- px/s the wave crawls sideways
 
--- Levels ----------------------------------------------------------------
+------------
+-- Levels --
+------------
 -- Level N clears once the player has defeated N * LEVEL_ENEMY_STEP enemies
 -- since that level began (level 1 -> 5, level 2 -> 10, ...).
-Config.LEVEL_ENEMY_STEP = 5
+Config.LEVEL_ENEMY_STEP = 3
+
+-- Wind gets both twitchier and more frequent as levels climb (see
+-- GameSceneMain:windTuning), but not on every level -- it steps up once every
+-- LEVEL_WIND_STEP_INTERVAL levels (2 = every other level: 1, 3, 5, ... step
+-- up; 2, 4, 6, ... hold the previous step's wind). Each step adds
+-- LEVEL_WIND_SPEED_CHANGE_RATE_STEP to WIND_SPEED_CHANGE_RATE_MIN/MAX and
+-- subtracts LEVEL_WIND_CHANGE_INTERVAL_STEP from WIND_CHANGE_INTERVAL_MIN/MAX,
+-- floored at WIND_CHANGE_INTERVAL_FLOOR so changes can't stack up faster than
+-- the ease from the previous one. WindShiftScene (see GameSceneMain.windStepForLevel)
+-- announces the level transitions where a step actually lands.
+Config.LEVEL_WIND_STEP_INTERVAL          = 3   -- levels per wind escalation step
+Config.LEVEL_WIND_SPEED_CHANGE_RATE_STEP = 0.3 -- px/s per second added to the wind's easing rate, per step
+Config.LEVEL_WIND_CHANGE_INTERVAL_STEP   = 0.75 -- seconds shaved off the time between wind changes, per step
+Config.WIND_CHANGE_INTERVAL_FLOOR        = 4   -- seconds; LEVEL_WIND_CHANGE_INTERVAL_STEP won't shrink the interval past this
 
 return Config

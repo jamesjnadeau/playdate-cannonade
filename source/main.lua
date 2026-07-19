@@ -14,9 +14,11 @@ import "libraries/pdParticles"
 
 -- Game code.
 import "scripts/Config"
+import "scripts/ConfigEnemy"
 import "scripts/Utils"
 import "scripts/Ship"
 import "scripts/Enemy"
+import "scripts/EnemySwordfish"
 import "scripts/Tridentball"
 import "scenes/TitleScene"
 import "scenes/InstructionsScene"
@@ -24,6 +26,7 @@ import "scenes/GameScene"
 import "scenes/GameSceneMain"
 import "scenes/GameSceneTest"
 import "scenes/LevelCompleteScene"
+import "scenes/WindShiftScene"
 
 -- Lock to a fixed 30fps so our fixed-timestep (Config.DT) matches wall-clock.
 playdate.display.setRefreshRate(Config.REFRESH)

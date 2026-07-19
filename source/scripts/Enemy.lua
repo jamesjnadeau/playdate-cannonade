@@ -2,12 +2,20 @@
 -- A hostile ship that steers toward the player and rams them.
 
 import "scripts/Config"
+import "scripts/ConfigEnemy"
 import "scripts/Utils"
 import "scripts/Ship"
 
 local gfx <const> = playdate.graphics
 
 class("Enemy").extends(Ship)
+
+-- Lowest self.level this enemy type is allowed to spawn at -- see
+-- Config.ENEMY_MIN_LEVEL and GameScene:spawnEnemy, which filters
+-- GameScene.enemyTypes by this. The base Enemy is unlocked from level 1, i.e.
+-- it always appears; subclasses (e.g. EnemySwordfish) can raise this to gate
+-- themselves to later levels.
+Enemy.minLevel = Config.ENEMY_MIN_LEVEL
 
 function Enemy:init(x, y, heading)
 	Enemy.super.init(self, x, y, heading)
@@ -18,19 +26,32 @@ function Enemy:init(x, y, heading)
 	self.speed = 0
 	self.teleportWarning = nil -- seconds left before relocation; nil when not pending
 
+	-- Movement tuning, broken out into instance fields (rather than read
+	-- straight from Config.ENEMY_*) so a subclass can override just these in
+	-- its own init and reuse the update/draw logic below -- see
+	-- EnemySwordfish.
+	self.moveSpeed = Config.ENEMY_SPEED
+	self.accel = Config.ENEMY_ACCEL
+	self.turnRateMax = Config.ENEMY_TURN_RATE_MAX
+	self.turnRateMin = Config.ENEMY_TURN_RATE_MIN
+	self.turnRateSpeedMultiplier = Config.ENEMY_TURN_RATE_SPEED_MULTIPLIER
+	self.windMultiplier = Config.ENEMY_WIND_MULTIPLIER
+	self.eyeOffset = 6 -- px the bow eye-dot sits ahead of center, see Enemy:draw
+	self.damage = Config.ENEMY_DAMAGE -- damage dealt to the player ship on ramming, see GameScene:tickGame
+
 	local L, B = Config.ENEMY_LENGTH, Config.ENEMY_BEAM
 	self.hull = { L, 0,  -L * 0.7, B,  -L, B * 0.55,  -L, -B * 0.55,  -L * 0.7, -B }
 end
 
--- Turn rate falls off linearly from ENEMY_TURN_RATE_MAX toward
--- ENEMY_TURN_RATE_MIN as self.speed rises toward ENEMY_SPEED *
--- ENEMY_TURN_RATE_SPEED_MULTIPLIER (see the Config comment for why that
--- reference speed isn't just ENEMY_SPEED).
+-- Turn rate falls off linearly from self.turnRateMax toward self.turnRateMin
+-- as self.speed rises toward self.moveSpeed * self.turnRateSpeedMultiplier
+-- (see the Config comment on ENEMY_TURN_RATE_SPEED_MULTIPLIER for why that
+-- reference speed isn't just moveSpeed directly).
 function Enemy:currentTurnRate()
-	local maxSpeed = Config.ENEMY_SPEED * Config.ENEMY_TURN_RATE_SPEED_MULTIPLIER
+	local maxSpeed = self.moveSpeed * self.turnRateSpeedMultiplier
 	local speedRatio = maxSpeed > 0 and (self.speed / maxSpeed) or 0
 	if speedRatio < 0 then speedRatio = 0 elseif speedRatio > 1 then speedRatio = 1 end
-	return Config.ENEMY_TURN_RATE_MAX - (Config.ENEMY_TURN_RATE_MAX - Config.ENEMY_TURN_RATE_MIN) * speedRatio
+	return self.turnRateMax - (self.turnRateMax - self.turnRateMin) * speedRatio
 end
 
 function Enemy:update(targetX, targetY, windDirection, windSpeed)
@@ -42,7 +63,7 @@ function Enemy:update(targetX, targetY, windDirection, windSpeed)
 	if diff > maxTurn then diff = maxTurn elseif diff < -maxTurn then diff = -maxTurn end
 	self.heading = Utils.wrapDeg(self.heading + diff)
 
-	self:updateSpeed(Config.ENEMY_SPEED, Config.ENEMY_ACCEL, dt)
+	self:updateSpeed(self.moveSpeed, self.accel, dt)
 	local hx, hy = Utils.heading(self.heading)
 	self.x = self.x + hx * self.speed * dt
 	self.y = self.y + hy * self.speed * dt
@@ -51,7 +72,7 @@ function Enemy:update(targetX, targetY, windDirection, windSpeed)
 	-- configurable fraction of its speed on top of their steering.
 	if windDirection and windSpeed then
 		local wx, wy = Utils.heading(windDirection)
-		local push = windSpeed * Config.ENEMY_WIND_MULTIPLIER
+		local push = windSpeed * self.windMultiplier
 		self.x = self.x + wx * push * dt
 		self.y = self.y + wy * push * dt
 	end
@@ -89,5 +110,5 @@ function Enemy:draw()
 	
 	local hx, hy = Utils.heading(self.heading)
 	gfx.setColor(gfx.kColorWhite)
-	gfx.fillCircleAtPoint(self.x + hx * 6, self.y + hy * 6, 2)
+	gfx.fillCircleAtPoint(self.x + hx * self.eyeOffset, self.y + hy * self.eyeOffset, 2)
 end

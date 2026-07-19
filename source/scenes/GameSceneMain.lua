@@ -4,6 +4,7 @@
 -- LevelCompleteScene for the next one.
 
 import "scripts/Config"
+import "scripts/ConfigEnemy"
 import "scripts/Utils"
 import "scenes/GameScene"
 
@@ -20,15 +21,45 @@ GameSceneMain.inputHandler.AButtonDown = function()
 end
 
 function GameSceneMain:resetGame(sceneProperties)
-	GameSceneMain.super.resetGame(self, sceneProperties)
 	sceneProperties = sceneProperties or {}
-	self.spawnTimer = Config.SPAWN_INTERVAL_START
+	-- Set before calling super: GameScene.resetGame calls self:windTuning(),
+	-- which (below) reads self.level to scale wind speed/timing per level.
 	self.level = sceneProperties.level or 1
+	GameSceneMain.super.resetGame(self, sceneProperties)
+	self.spawnTimer = Config.SPAWN_INTERVAL_START
 	self.score = sceneProperties.totalDefeated or 0 -- cumulative across all levels this run
 	self.levelKills = 0                             -- kills toward clearing the current level
 	self.levelSpawned = 0                           -- enemies spawned so far this level
 	self.levelTarget = self.level * Config.LEVEL_ENEMY_STEP
 	self.levelComplete = false
+end
+
+-- How many wind-escalation steps have landed by the given level, per
+-- Config.LEVEL_WIND_STEP_INTERVAL (e.g. 2 -> levels 1-2 are step 0, 3-4 are
+-- step 1, 5-6 are step 2, ...). A class-level (not instance) function so
+-- LevelCompleteScene can call it
+-- directly to decide whether a level transition needs to route through
+-- WindShiftScene.
+function GameSceneMain.windStepForLevel(level)
+	return math.floor((level - 1) / Config.LEVEL_WIND_STEP_INTERVAL)
+end
+
+-- Wind gets twitchier (faster easing rate) and more frequent (shorter time
+-- between changes) as levels climb, same idea as levelTarget above: scaled
+-- linearly off the wind step (see windStepForLevel above), tunable via
+-- Config.LEVEL_WIND_SPEED_CHANGE_RATE_STEP and Config.LEVEL_WIND_CHANGE_INTERVAL_STEP.
+function GameSceneMain:windTuning()
+	local step = GameSceneMain.windStepForLevel(self.level)
+	local intervalMin = math.max(Config.WIND_CHANGE_INTERVAL_FLOOR,
+		Config.WIND_CHANGE_INTERVAL_MIN - step * Config.LEVEL_WIND_CHANGE_INTERVAL_STEP)
+	local intervalMax = math.max(Config.WIND_CHANGE_INTERVAL_FLOOR,
+		Config.WIND_CHANGE_INTERVAL_MAX - step * Config.LEVEL_WIND_CHANGE_INTERVAL_STEP)
+	return {
+		speedChangeRateMin = Config.WIND_SPEED_CHANGE_RATE_MIN + step * Config.LEVEL_WIND_SPEED_CHANGE_RATE_STEP,
+		speedChangeRateMax = Config.WIND_SPEED_CHANGE_RATE_MAX + step * Config.LEVEL_WIND_SPEED_CHANGE_RATE_STEP,
+		changeIntervalMin = intervalMin,
+		changeIntervalMax = intervalMax,
+	}
 end
 
 function GameSceneMain:currentSpawnInterval()
