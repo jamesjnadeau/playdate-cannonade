@@ -127,6 +127,7 @@ Config.SAIL_SWING_FRICTION = 5
 -- Trident --
 -------------
 Config.TRIDENT_CHARGE_RATE      = 0.5   -- charge units / second (held), clamps at 1.0
+Config.TRIDENT_DAMAGE    = 1     -- health removed from an enemy per trident hit, see GameScene's tridentball collision loop
 Config.TRIDENT_SPEED     = 420   -- projectile speed, fixed regardless of charge
 Config.TRIDENT_MAX_SPREAD = 40   -- degrees of random aim error at 0 charge
 Config.TRIDENT_MAX_ACCURACY = 0.99 -- accuracy (0-1) reached once fully charged

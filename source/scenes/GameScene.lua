@@ -421,10 +421,13 @@ function GameScene:tickGame()
 		for j = #self.enemies, 1, -1 do
 			local e = self.enemies[j]
 			if Utils.dist(b.x, b.y, e.x, e.y) < (b.radius + e.radius) then
-				self:addExplosion(e)
-				table.remove(self.enemies, j)
-				self:enemyDefeated()
+				e:hit(Config.TRIDENT_DAMAGE)
 				hit = true
+				if not e.alive then
+					self:addExplosion(e)
+					table.remove(self.enemies, j)
+					self:enemyDefeated()
+				end
 				break
 			end
 		end

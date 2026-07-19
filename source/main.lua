@@ -17,6 +17,7 @@ import "libraries/playout"
 -- Game code.
 import "scripts/Config"
 import "scripts/ConfigEnemy"
+import "scripts/ConfigUpgrades"
 import "scripts/Utils"
 import "scripts/Ship"
 import "scripts/Enemy"
@@ -31,6 +32,7 @@ import "scenes/GameSceneMain"
 import "scenes/GameSceneTest"
 import "scenes/EnemySelectScene"
 import "scenes/LevelCompleteScene"
+import "scenes/UpgradeSelectScene"
 import "scenes/WindShiftScene"
 
 -- Lock to a fixed 30fps so our fixed-timestep (Config.DT) matches wall-clock.

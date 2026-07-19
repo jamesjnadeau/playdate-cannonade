@@ -8,6 +8,10 @@ themselves. Static review (reading the diff, checking Lua syntax/logic by
 eye) is still expected; just don't invoke the toolchain. If asked to
 specifically run something, that's a direct request and fine to do.
 
+This does *not* apply to `tests/run.sh` (see the `tests/` section below) —
+it's a plain `lua5.4` script with no SDK/Simulator involved, so running it to
+check pure-logic changes is expected, not just a direct-request exception.
+
 ## Playdate system menu: 3-item cap
 
 `playdate.getSystemMenu()` accepts at most **3 custom items total**, across
@@ -31,6 +35,36 @@ now `GameSceneTest`'s "Select Enemy" is the only system-menu item in the
 game, so there's no live conflict — but the cap still applies if a future
 scene wants its own system-menu item alongside it.
 
+## `tests/`
+
+Plain-`lua5.4` unit tests — no Playdate SDK, Simulator, or `class()`/CoreLibs
+involved. Scope is deliberately narrow: only files that don't use
+`class("X").extends(...)` can be loaded this way, so this currently covers
+`source/scripts/Utils.lua` and `Config.applyUpgrade` in
+`source/scripts/ConfigUpgrades.lua`. Scenes, `Ship`, `Enemy`, and anything
+else built on Noble Engine's class system still require the real Simulator —
+these tests are a floor, not a substitute for manual verification of
+gameplay/UI changes.
+
+- **`run.sh`** — runs the suite (`lua5.4 tests/run_all.lua`), fetching
+  `luaunit` first via `fetch-test-deps.sh` if `tests/vendor/luaunit.lua` isn't
+  already present. Exits non-zero on any failure. Used both locally and by
+  `.github/workflows/build.yml`'s `test` job, which the `build` job now
+  depends on (`needs: test`) — a broken test blocks the compile/release
+  steps.
+- **`run_all.lua`** — loads `tests/support/mock_playdate.lua`, then every
+  `tests/test_*.lua` file, then hands off to `luaunit.LuaUnit.run()`. Add new
+  test files to the list here.
+- **`support/mock_playdate.lua`** — the minimal `playdate`/`Particles` global
+  stand-ins needed to `dofile` `Config.lua`/`ConfigUpgrades.lua`/`Utils.lua`
+  outside the Simulator. Extend this if a future pure-logic script needs
+  something it doesn't already stub.
+- **`vendor/luaunit.lua`** — checked into git (like `pdParticles.lua`/
+  `playout.lua` under `source/libraries/`), not gitignored; `fetch-test-deps.sh`
+  is the bootstrap/fallback for a fresh clone missing it, mirroring
+  `fetch-deps.sh`'s pattern. Honors `LUAUNIT_REF` to pin a branch/tag/commit
+  instead of `master`.
+
 ## `tools/`
 
 - **`build.sh`** — `$PLAYDATE_SDK_PATH/bin/pdc source MermaindMadness.pdx`.
@@ -47,6 +81,10 @@ scene wants its own system-menu item alongside it.
   re-run, skips anything already fetched. Used both locally and by
   `.github/workflows/build.yml` in CI. Honors `NOBLE_REF` / `PARTICLES_REF` /
   `PLAYOUT_REF` env vars to pin a branch/tag/commit instead of `main`.
+- **`fetch-test-deps.sh`** — same idea as `fetch-deps.sh` but for `tests/`:
+  pulls `luaunit` into `tests/vendor/` if it isn't already present. Kept
+  separate so a test-only dependency never ends up under `source/` (`pdc`
+  would compile it into the `.pdx`). See the `tests/` section above.
 - **`new-enemy.sh <Name>`** — scaffolds a new `Enemy` subclass. Given a
   PascalCase or camelCase name (e.g. `Piranha`, `SeaSerpent`), it generates
   `source/scripts/Enemy<Name>.lua` (modeled on `EnemySwordfish.lua`, with
