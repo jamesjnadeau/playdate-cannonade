@@ -1,15 +1,17 @@
 -- TuningScene.lua
--- Reached from the title screen's "Tuning" item (last in the list). Lets you
--- live-adjust nearly every Config.lua tuning value from a single scrollable,
--- categorized menu -- unlike SettingsScene's HUD toggles, this is meant as a
--- broad debug/tweak surface, not a curated player-facing settings screen.
--- Changes are runtime-only: they mutate the global Config table exactly like
--- SettingsScene's HUD_SHOW_* toggles already do, and nothing here ever
--- touches playdate.datastore, so nothing persists past this play session.
--- Built with the playout UI library, see libraries/playout.lua. Up/Down move
--- the highlight (wraps); the crank fast-scrolls through the list; Left/Right
+-- Reached from SettingsScene's "Tuning" section (its "Open Tuning Menu" row
+-- -- see SettingsScene.lua). Lets you live-adjust nearly every Config.lua
+-- tuning value from a single scrollable, categorized menu -- unlike
+-- SettingsScene's HUD/Sound rows, this is meant as a broad debug/tweak
+-- surface, not a curated player-facing settings screen; that's also why it's
+-- not reachable directly from the title screen. Changes are runtime-only:
+-- they mutate the global Config table exactly like SettingsScene's
+-- HUD_SHOW_* toggles already do, and nothing here ever touches
+-- playdate.datastore, so nothing persists past this play session. Built
+-- with the playout UI library, see libraries/playout.lua. Up/Down move the
+-- highlight (wraps); the crank fast-scrolls through the list; Left/Right
 -- adjust the highlighted numeric setting; Ⓐ toggles the highlighted boolean
--- setting; Ⓑ returns to the title screen.
+-- setting; Ⓑ returns to SettingsScene.
 --
 -- Deliberately leaves out:
 --  - every Config.ENEMY_*/ConfigEnemy.lua field.
@@ -22,6 +24,9 @@
 --  - Config.START_SCENE (a string naming a scene class, and boot-time only).
 --  - Config.DEMO_MODE/DEMO_MAX_LEVEL (explicitly documented in Config.lua as
 --    a build-time switch for a kiosk .pdx, not a runtime setting).
+--  - Config.MUSIC_VOLUME/MUSIC_SONG (covered by SettingsScene's own Sound
+--    section instead; MUSIC_SONG is a filename string besides, which this
+--    scene's number/boolean row types don't support).
 
 import "scripts/Config"
 import "scripts/Utils"
@@ -345,7 +350,7 @@ TuningScene.inputHandler = {
 	rightButtonDown = function() adjustValue(1) end,
 	AButtonDown = function() toggleBoolean() end,
 	BButtonDown = function()
-		if scene then Noble.transition(TitleScene) end
+		if scene then Noble.transition(SettingsScene) end
 	end,
 	-- Fast-scroll: the list is long enough (~90 rows) that Up/Down alone is
 	-- tedious, so the crank moves the selection one row per

@@ -102,6 +102,12 @@ Config.SHIP_WATER_FRICTION = 0.05
 -- this fraction of every pixel/second it's over the max, on top of the
 -- regular water friction above -- see Ship:updateSpeed.
 Config.SHIP_OVERSPEED_FRICTION = 0.025
+-- wake
+Config.SHIP_WAKE_SIZE_MIN = 1
+Config.SHIP_WAKE_SIZE_MAX = 2
+Config.SHIP_WAKE_DECAY = 0.15
+Config.SHIP_WAKE_SPEED_MIN = 2
+Config.SHIP_WAKE_SPEED_MAX = 4
 
 ----------
 -- Sail --

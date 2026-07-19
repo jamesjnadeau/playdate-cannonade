@@ -41,9 +41,9 @@ function Player:init(x, y)
 	self.wakeStarboard = ParticleCircle(x, y)
 	for _, wake in ipairs({ self.wakePort, self.wakeStarboard }) do
 		wake:setMode(Particles.modes.DECAY)
-		wake:setSize(2, 4)
-		wake:setDecay(0.35)
-		wake:setSpeed(1, 3)
+		wake:setSize(Config.SHIP_WAKE_SIZE_MIN, Config.SHIP_WAKE_SIZE_MAX)
+		wake:setDecay(Config.SHIP_WAKE_DECAY)
+		wake:setSpeed(Config.SHIP_WAKE_SPEED_MIN, Config.SHIP_WAKE_SPEED_MAX)
 		wake:setColor(gfx.kColorBlack)
 	end
 end

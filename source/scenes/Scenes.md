@@ -19,11 +19,11 @@ flowchart TD
     Title -->|"Training (A)"| GameTraining["GameSceneTraining"]
     Title -->|"Instructions (A)"| Instructions["InstructionsScene"]
     Title -->|"Settings (A)"| Settings["SettingsScene"]
-    Title -->|"Tuning (A)"| Tuning["TuningScene"]
 
     Instructions -->|"B"| Title
     Settings -->|"B"| Title
-    Tuning -->|"B"| Title
+    Settings -->|"Tuning section: Open Tuning Menu (A)"| Tuning["TuningScene"]
+    Tuning -->|"B"| Settings
 
     GameTraining -->|"B"| Title
     GameTraining -->|"system menu: Select Enemy"| EnemySelect["EnemySelectScene"]
@@ -60,7 +60,7 @@ stubbed.
 ## TitleScene
 
 Start screen — the game's entry point (`main.lua` calls
-`Noble.new(TitleScene, ...)`). Renders a 5-item menu with
+`Noble.new(TitleScene, ...)`). Renders a 4-item menu with
 [playout](../libraries/playout.lua).
 
 - **Reached from:** app launch only.
@@ -69,8 +69,8 @@ Start screen — the game's entry point (`main.lua` calls
   - "Play" → `GameSceneMain` (or `GameSceneDemo`, if `Config.DEMO_MODE` is on)
   - "Training" → `GameSceneTraining`
   - "Instructions" → `InstructionsScene`
-  - "Settings" → `SettingsScene`
-  - "Tuning" → `TuningScene`
+  - "Settings" → `SettingsScene` (from where `TuningScene` is also reachable
+    — see below; it's no longer a title-screen item itself)
 - **sceneProperties read:** none.
 
 ## GameSceneMain
@@ -223,45 +223,65 @@ actually performs *that* direction enough — see `Config.INSTRUCTIONS_*`:
 
 ## SettingsScene
 
-Toggles the `Config.HUD_SHOW_*` flags (Wind Speed / Wind Direction / Player
-Speed) — moved here (out of the system menu) so the system menu stays free
-for scene-specific items like `GameSceneTraining`'s "Select Enemy"; see the
-3-item cap note in `CLAUDE.md`. Built with
-[playout](../libraries/playout.lua).
+Three sections in one flat (scrollless — it's short) list, grouped like
+`TuningScene`'s categorized menu but curated for players rather than
+covering all of `Config.lua`:
 
-- **Reached from:** `TitleScene` ("Settings").
-- **Controls:** Up/Down move the highlight (wraps); A toggles the
-  highlighted setting; B returns to `TitleScene`.
+- **HUD** — the `Config.HUD_SHOW_*` flags (Wind Speed / Wind Direction /
+  Player Speed) — moved here (out of the system menu) so the system menu
+  stays free for scene-specific items like `GameSceneTraining`'s "Select
+  Enemy"; see the 3-item cap note in `CLAUDE.md`.
+- **Sound** — a "Song" row that cycles through `.mid` files found under
+  `source/assets/songs` (scanned once via `playdate.file.listFiles` when
+  `SettingsScene.lua` loads) via `MidiPlayer`, immediately loading and
+  playing whichever one is selected as a live preview (it keeps looping as
+  background music after you leave this scene — nothing stops it), and a
+  "Volume" row (`Config.MUSIC_VOLUME`, applied immediately via
+  `MidiPlayer.applyVolume()`). The choice is recorded in `Config.MUSIC_SONG`
+  (a filename, or nil for no song).
+- **Tuning** — a single "Open Tuning Menu" row; A transitions to
+  `TuningScene` (see below). This is the only way to reach `TuningScene` —
+  it's not on the title screen.
+
+Built with [playout](../libraries/playout.lua).
+
+- **Reached from:** `TitleScene` ("Settings"); `TuningScene` (B).
+- **Controls:** Up/Down move the highlight (wraps); Left/Right cycle the
+  Song row or adjust the Volume row (a no-op on HUD/Tuning rows); A toggles
+  the highlighted HUD setting or activates the Tuning row (a no-op on
+  Sound rows); B returns to `TitleScene`.
 - **sceneProperties read:** none.
 
 ## TuningScene
 
 A broad debug/tweak surface, not a curated player-facing settings screen
-like `SettingsScene`: a single scrollable, categorized menu covering nearly
-every `Config.lua` tuning value (~90 fields, grouped to mirror `Config.lua`'s
-own section comments). Changes are runtime-only — they mutate the global
-`Config` table in place, the same way `SettingsScene`'s `HUD_SHOW_*` toggles
-already do, and nothing here ever touches `playdate.datastore`, so nothing
-persists past the current play session. Built with
-[playout](../libraries/playout.lua); the row list is windowed
-(`VISIBLE_ROWS`) around the current selection rather than laid out in full,
-so the tree stays cheap to rebuild despite the field count.
+like `SettingsScene`'s HUD/Sound sections: a single scrollable, categorized
+menu covering nearly every remaining `Config.lua` tuning value (~90 fields,
+grouped to mirror `Config.lua`'s own section comments). Changes are
+runtime-only — they mutate the global `Config` table in place, the same way
+`SettingsScene`'s `HUD_SHOW_*` toggles already do, and nothing here ever
+touches `playdate.datastore`, so nothing persists past the current play
+session. Built with [playout](../libraries/playout.lua); the row list is
+windowed (`VISIBLE_ROWS`) around the current selection rather than laid out
+in full, so the tree stays cheap to rebuild despite the field count.
 
 Deliberately excludes every `Config.ENEMY_*`/`ConfigEnemy.lua` field, plus a
 handful of `Config.lua` fields that can't be meaningfully live-tuned this
 way: `Config.EXPLOSION` (a structured pdParticles table, not a scalar —
 `EXPLOSION_WIND_INFLUENCE` next to it is still included), the display
 fundamentals `SCREEN_W`/`SCREEN_H`/`REFRESH`/`DT`, the boot-only string
-`START_SCENE`, and the build-time switch `DEMO_MODE`/`DEMO_MAX_LEVEL`. See
-the comment block at the top of `TuningScene.lua` for the full rationale.
+`START_SCENE`, the build-time switch `DEMO_MODE`/`DEMO_MAX_LEVEL`, and
+`Config.MUSIC_VOLUME`/`MUSIC_SONG` (covered by `SettingsScene`'s own Sound
+section instead). See the comment block at the top of `TuningScene.lua` for
+the full rationale.
 
-- **Reached from:** `TitleScene` ("Tuning").
+- **Reached from:** `SettingsScene` (Tuning section, "Open Tuning Menu").
 - **Controls:** Up/Down move the highlight (wraps); the crank fast-scrolls
   the list (one row per `CRANK_DEGREES_PER_ROW` degrees turned, either
   direction); Left/Right adjust the highlighted numeric setting by its step,
   clamped to that field's configured min/max; A toggles the highlighted
   boolean setting (a no-op on a numeric row, and Left/Right are a no-op on a
-  boolean row); B returns to `TitleScene`.
+  boolean row); B returns to `SettingsScene`.
 - **sceneProperties read:** none.
 
 ## LevelCompleteScene

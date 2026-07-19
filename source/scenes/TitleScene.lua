@@ -35,7 +35,7 @@ end
 -- themselves are only referenced inside confirmSelection() below, which runs
 -- long after every scene file has finished loading, so load order here
 -- doesn't matter.
-local MENU_ITEMS = { "Play", "Training", "Instructions", "Settings", "Tuning" }
+local MENU_ITEMS = { "Play", "Training", "Instructions", "Settings" }
 
 -- Rebuilt every frame from :update() -- the blinking prompt needs to redraw
 -- regardless of whether the selection changed, and the tree is tiny enough
@@ -103,10 +103,8 @@ local function confirmSelection()
 		Noble.transition(GameSceneTraining)
 	elseif scene.selected == 3 then
 		Noble.transition(InstructionsScene)
-	elseif scene.selected == 4 then
-		Noble.transition(SettingsScene)
 	else
-		Noble.transition(TuningScene)
+		Noble.transition(SettingsScene)
 	end
 end
 

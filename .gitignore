@@ -9,3 +9,6 @@
 
 # LuaCATS type stubs (editor tooling only, see tools/fetch-luacats.sh)
 /vendor/
+
+# folder I store potential music in locally
+/art-src/music

@@ -1,65 +1,184 @@
 -- SettingsScene.lua
--- Reached from the title screen's "Settings" item. Lets you toggle the HUD
--- visibility flags (Config.HUD_SHOW_*) that used to live as checkmark items
--- in the system menu -- moved here so the system menu is free for
--- scene-specific items like GameSceneTraining's "Select Enemy" (it caps out at
--- 3 custom items total). Built with the playout UI library, see
--- libraries/playout.lua. Up/Down move the highlight, Ⓐ toggles the
--- highlighted setting, Ⓑ returns to the title screen.
+-- Reached from the title screen's "Settings" item. Three sections in one
+-- scrollless list (it's short enough not to need TuningScene's scroll
+-- window): HUD toggles (Config.HUD_SHOW_*, moved here from the system menu
+-- so it stays free for scene-specific items -- see EnemySelectScene/
+-- GameSceneTraining's "Select Enemy"), Sound (pick a background song out of
+-- source/assets/songs and set Config.MUSIC_VOLUME), and Tuning (a single
+-- row that hands off to TuningScene's full debug/tweak menu -- Tuning is no
+-- longer reachable directly from the title screen, only through here).
+-- Built with the playout UI library, see libraries/playout.lua. Up/Down
+-- move the highlight (wraps); Left/Right cycle the song or adjust the
+-- volume; Ⓐ toggles a HUD setting or opens Tuning; Ⓑ returns to the title
+-- screen.
 
 import "scripts/Config"
+import "scripts/Utils"
+import "scripts/MidiPlayer"
 
 local gfx <const> = playdate.graphics
 
+---@class SettingsScene.Item
+---@field type "boolean"|"number"|"song"|"action"
+---@field label string
+---@field key? string Config field this row edits (boolean/number types)
+---@field step? number Left/Right increment, for number rows
+---@field min? number
+---@field max? number
+---@field percent? boolean display a number row as a rounded percentage (0-1 -> "NN%") instead of a raw decimal
+---@field action? fun() Ⓐ handler, for action rows
+
 ---@class SettingsScene : NobleScene
----@field selected integer index into SETTINGS
+---@field selected integer index into SETTING_ROWS
 ---@field tree table playout tree, see rebuild()
 ---@field img _Image drawn image of the playout tree, see rebuild()
 SettingsScene = class("SettingsScene").extends(NobleScene) or SettingsScene
 
 local scene = nil
 
--- label + Config field toggled by each row. Add an entry here to expose a
--- new HUD_SHOW_* (or other boolean Config) flag in this menu.
-local SETTINGS = {
-	{ label = "Wind Speed", key = "HUD_SHOW_WIND_SPEED" },
-	{ label = "Wind Direction", key = "HUD_SHOW_WIND_DIRECTION" },
-	{ label = "Player Speed", key = "HUD_SHOW_PLAYER_SPEED" },
+-- Songs are bundled read-only assets (compiled into the .pdx from
+-- source/assets/songs) -- they can't change mid-session, so this scans once
+-- at load time rather than every time the scene is entered.
+local SONGS_DIR = "assets/songs"
+local SONG_FILES = {}
+do
+	local files = playdate.file.listFiles(SONGS_DIR) or {}
+	for _, name in ipairs(files) do
+		if name:match("%.mid$") then
+			SONG_FILES[#SONG_FILES + 1] = name
+		end
+	end
+	table.sort(SONG_FILES)
+end
+
+-- The song row cycles a virtual list: index 1 is always "no song", indices
+-- 2.. map to SONG_FILES[index - 1]. Config.MUSIC_SONG (nil or a filename)
+-- is the source of truth so the choice reads back correctly if this scene
+-- is re-entered.
+---@return integer
+local function currentSongIndex()
+	if not Config.MUSIC_SONG then return 1 end
+	for i, name in ipairs(SONG_FILES) do
+		if name == Config.MUSIC_SONG then return i + 1 end
+	end
+	return 1
+end
+
+-- Applies the song at virtual index `index`: stops playback for "no song",
+-- otherwise loads and immediately plays the pick (so choosing a song in
+-- this menu also previews it) and records it in Config.MUSIC_SONG.
+-- Playback isn't tied to this scene -- it keeps looping as background music
+-- after you leave Settings, same as any other MidiPlayer.play() call.
+---@param index integer
+local function selectSong(index)
+	if index <= 1 or #SONG_FILES == 0 then
+		Config.MUSIC_SONG = nil
+		MidiPlayer.stop()
+		return
+	end
+	local name = SONG_FILES[index - 1]
+	Config.MUSIC_SONG = name
+	MidiPlayer.load({ path = SONGS_DIR .. "/" .. name })
+	MidiPlayer.play()
+end
+
+---@param v number
+---@param decimals integer
+---@return number
+local function roundTo(v, decimals)
+	local mult = 10 ^ decimals
+	return math.floor(v * mult + 0.5) / mult
+end
+
+-- label + Config field toggled/adjusted by each row, grouped into the three
+-- sections described in the file header above.
+local CATEGORIES = {
+	{ name = "HUD", items = {
+		{ type = "boolean", key = "HUD_SHOW_WIND_SPEED", label = "Wind Speed" },
+		{ type = "boolean", key = "HUD_SHOW_WIND_DIRECTION", label = "Wind Direction" },
+		{ type = "boolean", key = "HUD_SHOW_PLAYER_SPEED", label = "Player Speed" },
+	} },
+	{ name = "Sound", items = {
+		{ type = "song", label = "Song" },
+		{ type = "number", key = "MUSIC_VOLUME", label = "Volume", step = 0.05, min = 0, max = 1, percent = true },
+	} },
+	{ name = "Tuning", items = {
+		{ type = "action", label = "Open Tuning Menu", action = function() Noble.transition(TuningScene) end },
+	} },
 }
 
--- Builds a fresh playout tree highlighting `selectedIndex`. Rebuilt (rather
--- than mutated in place) whenever the selection or a setting changes -- the
--- list is tiny so this stays cheap and keeps the highlight/checkbox logic in
--- one place.
+-- Flattened once at load time, same split as TuningScene: ROWS is every row
+-- in on-screen order (category headers + settings), SETTING_ROWS is just
+-- the selectable subset that moveSelection/adjustValue/activate index into.
+local ROWS = {}
+local SETTING_ROWS = {}
+for _, category in ipairs(CATEGORIES) do
+	ROWS[#ROWS + 1] = { kind = "header", label = category.name }
+	for _, item in ipairs(category.items) do
+		ROWS[#ROWS + 1] = { kind = "setting", item = item }
+		SETTING_ROWS[#SETTING_ROWS + 1] = item
+	end
+end
+
+---@param item SettingsScene.Item
+---@return string
+local function formatValue(item)
+	if item.type == "boolean" then
+		return Config[item.key] and "[x] " or "[ ] "
+	elseif item.type == "number" then
+		if item.percent then
+			return math.floor(Config[item.key] * 100 + 0.5) .. "%"
+		end
+		return tostring(Config[item.key])
+	elseif item.type == "song" then
+		if #SONG_FILES == 0 then return "(no songs found)" end
+		local idx = currentSongIndex()
+		if idx == 1 then return "(none)" end
+		return (SONG_FILES[idx - 1]:gsub("%.mid$", ""))
+	end
+	return ""
+end
+
+-- Builds a fresh playout tree highlighting `selectedIndex` (into
+-- SETTING_ROWS). Rebuilt (rather than mutated in place) whenever the
+-- selection or a setting changes, same as TuningScene/EnemySelectScene.
 ---@param selectedIndex integer
 ---@return table playout tree
 local function buildTree(selectedIndex)
+	local currentItem = SETTING_ROWS[selectedIndex]
 	local children = {
 		playout.text.new("Settings"),
 	}
-	for i, setting in ipairs(SETTINGS) do
-		local isSelected = i == selectedIndex
-		local checkbox = Config[setting.key] and "[x]" or "[ ]"
-		children[#children + 1] = playout.box.new({
-			padding = 4,
-			spacing = 8,
-			direction = playout.kDirectionHorizontal,
-			hAlign = playout.kAlignStart,
-			backgroundColor = isSelected and gfx.kColorBlack or nil,
-		}, {
-			playout.text.new(checkbox, {
-				color = isSelected and gfx.kColorWhite or gfx.kColorBlack,
-			}),
-			playout.text.new(setting.label, {
-				color = isSelected and gfx.kColorWhite or gfx.kColorBlack,
-			}),
-		})
+	for _, row in ipairs(ROWS) do
+		if row.kind == "header" then
+			children[#children + 1] = playout.text.new(row.label)
+		else
+			local item = row.item
+			local isSelected = item == currentItem
+			local text
+			if item.type == "boolean" then
+				text = formatValue(item) .. item.label
+			elseif item.type == "action" then
+				text = item.label .. " >"
+			else
+				text = item.label .. ": " .. formatValue(item)
+			end
+			children[#children + 1] = playout.box.new({
+				padding = 2,
+				hAlign = playout.kAlignStart,
+				backgroundColor = isSelected and gfx.kColorBlack or nil,
+			}, {
+				playout.text.new(text, {
+					color = isSelected and gfx.kColorWhite or gfx.kColorBlack,
+				}),
+			})
+		end
 	end
-	children[#children + 1] = playout.text.new("Ⓐ toggle   Ⓑ back")
+	children[#children + 1] = playout.text.new("Left/Right adjust  Ⓐ toggle/open  Ⓑ back")
 
 	local root = playout.box.new({
 		direction = playout.kDirectionVertical,
-		spacing = 8,
+		spacing = 6,
 		padding = 10,
 		hAlign = playout.kAlignCenter,
 		backgroundColor = gfx.kColorWhite,
@@ -100,20 +219,44 @@ end
 ---@param delta integer
 local function moveSelection(delta)
 	if not scene then return end
-	local count = #SETTINGS
+	local count = #SETTING_ROWS
 	scene.selected = ((scene.selected - 1 + delta) % count) + 1
 	scene:rebuild()
+end
+
+---@param delta integer -1 or 1
+local function adjustValue(delta)
+	if not scene then return end
+	local item = SETTING_ROWS[scene.selected]
+	if item.type == "number" then
+		Config[item.key] = Utils.clamp(roundTo(Config[item.key] + delta * item.step, 2), item.min, item.max)
+		if item.key == "MUSIC_VOLUME" then MidiPlayer.applyVolume() end
+		scene:rebuild()
+	elseif item.type == "song" then
+		if #SONG_FILES == 0 then return end
+		local count = #SONG_FILES + 1
+		selectSong(((currentSongIndex() - 1 + delta) % count) + 1)
+		scene:rebuild()
+	end
+end
+
+local function activate()
+	if not scene then return end
+	local item = SETTING_ROWS[scene.selected]
+	if item.type == "boolean" then
+		Config[item.key] = not Config[item.key]
+		scene:rebuild()
+	elseif item.type == "action" then
+		item.action()
+	end
 end
 
 SettingsScene.inputHandler = {
 	upButtonDown = function() moveSelection(-1) end,
 	downButtonDown = function() moveSelection(1) end,
-	AButtonDown = function()
-		if not scene then return end
-		local setting = SETTINGS[scene.selected]
-		Config[setting.key] = not Config[setting.key]
-		scene:rebuild()
-	end,
+	leftButtonDown = function() adjustValue(-1) end,
+	rightButtonDown = function() adjustValue(1) end,
+	AButtonDown = function() activate() end,
 	BButtonDown = function()
 		if scene then Noble.transition(TitleScene) end
 	end,

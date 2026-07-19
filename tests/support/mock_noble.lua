@@ -65,9 +65,31 @@ end
 -- directly in the order they need each other.
 function import(...) end
 
--- playdate.graphics / kTextAlignment ------------------------------------------
+-- playdate.file ---------------------------------------------------------------
 
 playdate = playdate or {}
+playdate.file = playdate.file or {}
+-- SettingsScene.lua scans for bundled songs at load time; there's no real
+-- .pdx bundle under lua5.4, so this always reports an empty directory.
+function playdate.file.listFiles(path) return {} end
+
+-- playdate.sound ----------------------------------------------------------------
+
+-- Just enough for Patches.lua's module-level RECIPES table (built at load
+-- time, so these constants must exist before any dofile of it) -- values
+-- match the real SDK's playdate.sound.kWave* constants. Nothing else here:
+-- MidiPlayer.load()/Patches.instrument() actually build real synth/
+-- instrument objects, but no scene-flow test triggers them (no song is ever
+-- bundled under lua5.4), so synth/instrument/sequence aren't stubbed.
+playdate.sound = playdate.sound or {}
+playdate.sound.kWaveSquare = 0
+playdate.sound.kWaveTriangle = 1
+playdate.sound.kWaveSine = 2
+playdate.sound.kWaveNoise = 3
+playdate.sound.kWaveSawtooth = 4
+
+-- playdate.graphics / kTextAlignment ------------------------------------------
+
 playdate.graphics = playdate.graphics or {}
 local gfx = playdate.graphics
 gfx.kColorBlack = gfx.kColorBlack or 0

@@ -56,7 +56,7 @@ function TestSceneFlow:testTitleMenuNavigationWraps()
 	lu.assertEquals(Noble.currentScene().selected, 1) -- "Play"
 
 	Noble.Input.fire("upButtonDown")
-	lu.assertEquals(Noble.currentScene().selected, 5) -- wraps to "Tuning"
+	lu.assertEquals(Noble.currentScene().selected, 4) -- wraps to "Settings"
 
 	Noble.Input.fire("downButtonDown")
 	Noble.Input.fire("downButtonDown")
@@ -213,14 +213,63 @@ function TestSceneFlow:testTitleSettingsToggleAndBack()
 	lu.assertEquals(currentClassName(), "TitleScene")
 end
 
--- TuningScene.selected starts on ROWS/SETTING_ROWS[1], which is always
--- Config.WATER_GRID (CATEGORIES[1] = "Water", its first item) -- see
--- TuningScene.lua.
-function TestSceneFlow:testTitleTuningAdjustNumberThenBack()
+-- SETTING_ROWS[4] is the Song row, [5] is Volume -- see SettingsScene.lua's
+-- CATEGORIES. mock_noble.lua's playdate.file.listFiles always returns an
+-- empty list (no real .pdx bundle under lua5.4), so the Song row has
+-- nothing to cycle through; this only exercises that it's a safe no-op.
+function TestSceneFlow:testTitleSettingsSoundSectionVolumeAndEmptySongList()
 	Noble.Input.fire("downButtonDown")
-	Noble.Input.fire("downButtonDown")
-	Noble.Input.fire("downButtonDown") -- 2 -> 5, "Tuning"
+	Noble.Input.fire("downButtonDown") -- 2 -> 4, "Settings"
 	Noble.Input.fire("AButtonDown")
+
+	for _ = 1, 3 do
+		Noble.Input.fire("downButtonDown") -- HUD(3) -> Song
+	end
+	lu.assertEquals(Noble.currentScene().selected, 4)
+
+	Noble.Input.fire("rightButtonDown") -- no songs bundled: no-op
+	lu.assertNil(Config.MUSIC_SONG)
+	lu.assertFalse(MidiPlayer.playing)
+
+	Noble.Input.fire("downButtonDown") -- Song -> Volume
+	lu.assertEquals(Noble.currentScene().selected, 5)
+
+	local before = Config.MUSIC_VOLUME
+	Noble.Input.fire("rightButtonDown")
+	lu.assertAlmostEquals(Config.MUSIC_VOLUME, before + 0.05, 1e-9)
+
+	-- Right clamps at 1 instead of climbing past full volume.
+	for _ = 1, 20 do
+		Noble.Input.fire("rightButtonDown")
+	end
+	lu.assertEquals(Config.MUSIC_VOLUME, 1)
+
+	-- Left clamps at 0 instead of going negative.
+	for _ = 1, 30 do
+		Noble.Input.fire("leftButtonDown")
+	end
+	lu.assertEquals(Config.MUSIC_VOLUME, 0)
+end
+
+-- Tuning is no longer reachable directly from the title screen -- it's the
+-- last row of SettingsScene's "Tuning" section (see SettingsScene.lua's
+-- CATEGORIES: 3 HUD rows + Song + Volume precede "Open Tuning Menu" in
+-- SETTING_ROWS, so 5 downButtonDowns from Settings' default selection=1
+-- lands on it). TuningScene.selected then starts on ROWS/SETTING_ROWS[1],
+-- which is always Config.WATER_GRID (CATEGORIES[1] = "Water", its first
+-- item) -- see TuningScene.lua.
+local function enterTuningFromTitle()
+	Noble.Input.fire("downButtonDown")
+	Noble.Input.fire("downButtonDown") -- 2 -> 4, "Settings"
+	Noble.Input.fire("AButtonDown")
+	for _ = 1, 5 do
+		Noble.Input.fire("downButtonDown") -- HUD(3) + Song + Volume -> "Open Tuning Menu"
+	end
+	Noble.Input.fire("AButtonDown")
+end
+
+function TestSceneFlow:testTitleTuningAdjustNumberThenBack()
+	enterTuningFromTitle()
 	lu.assertEquals(currentClassName(), "TuningScene")
 
 	local scene = Noble.currentScene()
@@ -245,7 +294,7 @@ function TestSceneFlow:testTitleTuningAdjustNumberThenBack()
 	lu.assertEquals(Config.WATER_GRID, 10)
 
 	Noble.Input.fire("BButtonDown")
-	lu.assertEquals(currentClassName(), "TitleScene")
+	lu.assertEquals(currentClassName(), "SettingsScene")
 end
 
 -- Exercises the crank fast-scroll path (moves one row per 20 degrees, see
@@ -256,10 +305,7 @@ end
 -- TuningScene.lua's CATEGORIES table; update this test if that ordering
 -- changes.
 function TestSceneFlow:testTitleTuningCrankScrollAndToggleBoolean()
-	Noble.Input.fire("downButtonDown")
-	Noble.Input.fire("downButtonDown")
-	Noble.Input.fire("downButtonDown") -- 2 -> 5, "Tuning"
-	Noble.Input.fire("AButtonDown")
+	enterTuningFromTitle()
 	local scene = Noble.currentScene()
 
 	Noble.Input.fire("cranked", 137) -- 6 full rows (120 deg) + 17 deg leftover
@@ -282,7 +328,7 @@ function TestSceneFlow:testTitleTuningCrankScrollAndToggleBoolean()
 	lu.assertEquals(Config.HUD_SHOW_WIND_SPEED, not before)
 
 	Noble.Input.fire("BButtonDown")
-	lu.assertEquals(currentClassName(), "TitleScene")
+	lu.assertEquals(currentClassName(), "SettingsScene")
 end
 
 -- --- GameSceneTraining / EnemySelectScene ------------------------------------
