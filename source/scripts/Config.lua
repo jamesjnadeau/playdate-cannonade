@@ -148,11 +148,11 @@ Config.NO_TARGET_MARK_OFFSET = 30 -- distance (px) from the ship's center to tha
 -- Off-screen enemy indicators: enemies whose on-screen directions fall
 -- within OFFSCREEN_INDICATOR_GROUP_ANGLE of each other share a single arrow
 -- (with a count badge) instead of stacking separate ones.
-Config.OFFSCREEN_INDICATOR_MARGIN      = 40  -- px inset from the screen edge
+Config.OFFSCREEN_INDICATOR_MARGIN      = 50  -- px inset from the screen edge
 Config.OFFSCREEN_INDICATOR_SIZE        = 14  -- pixel size of the arrow glyph
 Config.OFFSCREEN_INDICATOR_GROUP_ANGLE = 18  -- degrees; enemies this close together share one indicator
 
--- Toggled from the system menu (see main.lua); all default to visible.
+-- Toggled from SettingsScene (reached from the title screen); all default to visible.
 Config.HUD_SHOW_WIND_SPEED     = true
 Config.HUD_SHOW_WIND_DIRECTION = true
 Config.HUD_SHOW_PLAYER_SPEED   = true

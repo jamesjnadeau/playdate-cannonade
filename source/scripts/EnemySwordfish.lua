@@ -15,6 +15,9 @@ class("EnemySwordfish").extends(Enemy)
 -- Enemy.minLevel / GameScene:spawnEnemy).
 EnemySwordfish.minLevel = Config.ENEMY_SWORDFISH_MIN_LEVEL
 
+-- See Enemy.displayName.
+EnemySwordfish.displayName = "Swordfish"
+
 function EnemySwordfish:init(x, y, heading)
 	EnemySwordfish.super.init(self, x, y, heading)
 

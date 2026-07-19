@@ -10,17 +10,36 @@ local gfx <const> = playdate.graphics
 
 class("GameSceneTest").extends(GameScene)
 
+-- Which enemy type Ⓐ spawns; nil means "pick randomly", matching the
+-- original behavior. Set by EnemySelectScene, reached via the "Select Enemy"
+-- system-menu item added below. A class field (not per-instance) so it
+-- survives the scene being torn down and recreated on transition.
+GameSceneTest.selectedEnemyType = nil
+
 GameSceneTest.inputHandler = GameScene.buildSharedInputHandler(GameScene.current)
 GameSceneTest.inputHandler.AButtonDown = function()
 	local s = GameScene.current()
-	if s then s:spawnEnemy() end
+	if s then s:spawnEnemy(GameSceneTest.selectedEnemyType) end
 end
 GameSceneTest.inputHandler.BButtonDown = function()
 	if GameScene.current() then Noble.transition(TitleScene) end
 end
 
+function GameSceneTest:start()
+	GameSceneTest.super.start(self)
+	playdate.getSystemMenu():addMenuItem("Select Enemy", function()
+		Noble.transition(EnemySelectScene)
+	end)
+end
+
+function GameSceneTest:finish()
+	GameSceneTest.super.finish(self)
+	playdate.getSystemMenu():removeAllMenuItems()
+end
+
 function GameSceneTest:drawModeStatus()
-	gfx.drawText("TEST  " .. #self.enemies .. " up", Config.SCREEN_W - 90, 6)
+	local enemyLabel = (GameSceneTest.selectedEnemyType and GameSceneTest.selectedEnemyType.displayName) or "Random"
+	gfx.drawTextAligned("TEST  " .. enemyLabel .. "  " .. #self.enemies .. " up", Config.SCREEN_W - 4, 6, kTextAlignment.right)
 end
 
 -- Draws a sine-wave polyline from x=0 to x=width along baseline y, so the

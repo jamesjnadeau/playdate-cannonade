@@ -17,6 +17,10 @@ class("Enemy").extends(Ship)
 -- themselves to later levels.
 Enemy.minLevel = Config.ENEMY_MIN_LEVEL
 
+-- Human-readable label, e.g. for EnemySelectScene's enemy picker. Subclasses
+-- should set their own.
+Enemy.displayName = "Enemy"
+
 function Enemy:init(x, y, heading)
 	Enemy.super.init(self, x, y, heading)
 	self.radius = Config.ENEMY_RADIUS

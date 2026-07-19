@@ -252,14 +252,16 @@ end
 -- types here to fold them into spawnEnemy's random pick below.
 GameScene.enemyTypes = { Enemy, EnemySwordfish }
 
--- Spawns one enemy at a random position around the ship, picking uniformly
--- among GameScene.enemyTypes entries unlocked at self.level (self.level is
--- nil for scenes without level progression, e.g. GameSceneTest -- treated as
--- level 1). Returns whether it actually spawned one (false if already at
--- MAX_ENEMIES). Subclasses that gate spawning further (e.g. a per-level cap)
--- should override this, check their own condition, then delegate to
--- GameScene.super.spawnEnemy(self).
-function GameScene:spawnEnemy()
+-- Spawns one enemy at a random position around the ship. With no argument,
+-- picks uniformly among GameScene.enemyTypes entries unlocked at self.level
+-- (self.level is nil for scenes without level progression, e.g.
+-- GameSceneTest -- treated as level 1). Pass forcedType (one of
+-- GameScene.enemyTypes) to spawn that type regardless of level gating --
+-- see GameSceneTest, which uses this for its enemy picker. Returns whether
+-- it actually spawned one (false if already at MAX_ENEMIES). Subclasses that
+-- gate spawning further (e.g. a per-level cap) should override this, check
+-- their own condition, then delegate to GameScene.super.spawnEnemy(self).
+function GameScene:spawnEnemy(forcedType)
 	if #self.enemies >= Config.MAX_ENEMIES then return false end
 	local ship = self.ship
 	local ang = math.random() * 360
@@ -269,14 +271,17 @@ function GameScene:spawnEnemy()
 	local ey = ship.y + ay * dist
 	local facing = Utils.angleTo(ex, ey, ship.x, ship.y)
 
-	local level = self.level or 1
-	local eligible = {}
-	for _, EnemyType in ipairs(GameScene.enemyTypes) do
-		if level >= EnemyType.minLevel then
-			eligible[#eligible + 1] = EnemyType
+	local EnemyType = forcedType
+	if not EnemyType then
+		local level = self.level or 1
+		local eligible = {}
+		for _, t in ipairs(GameScene.enemyTypes) do
+			if level >= t.minLevel then
+				eligible[#eligible + 1] = t
+			end
 		end
+		EnemyType = eligible[math.random(#eligible)]
 	end
-	local EnemyType = eligible[math.random(#eligible)]
 	self.enemies[#self.enemies + 1] = EnemyType(ex, ey, facing)
 	return true
 end

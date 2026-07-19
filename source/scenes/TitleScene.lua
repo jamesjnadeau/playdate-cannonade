@@ -1,5 +1,6 @@
 -- TitleScene.lua
--- Start screen: Up/Down pick a scene, A confirms.
+-- Start screen: Up/Down pick a scene, A confirms. Rendered with the playout
+-- UI library, see libraries/playout.lua.
 
 import "scripts/Config"
 
@@ -14,7 +15,37 @@ local scene = nil
 -- themselves are only referenced inside confirmSelection() below, which runs
 -- long after every scene file has finished loading, so load order here
 -- doesn't matter.
-local MENU_ITEMS = { "Play", "Test Enemies", "Instructions" }
+local MENU_ITEMS = { "Play", "Test Enemies", "Instructions", "Settings" }
+
+-- Rebuilt every frame from :update() -- the blinking prompt needs to redraw
+-- regardless of whether the selection changed, and the tree is tiny enough
+-- that rebuilding it outright is simpler than diffing what changed.
+local function buildTree(selected, showPrompt)
+	local menuChildren = {}
+	for i, label in ipairs(MENU_ITEMS) do
+		local text = (i == selected) and ("> " .. label .. " <") or label
+		menuChildren[i] = playout.text.new(text, { alignment = kTextAlignment.center })
+	end
+
+	local root = playout.box.new({
+		direction = playout.kDirectionVertical,
+		spacing = 14,
+		padding = 20,
+		hAlign = playout.kAlignCenter,
+	}, {
+		playout.text.new("* Mermaid Madness *", { alignment = kTextAlignment.center }),
+		playout.text.new("a Playdate pirate voyage", { alignment = kTextAlignment.center }),
+		playout.box.new({ direction = playout.kDirectionVertical, spacing = 4 }, menuChildren),
+		-- Toggling color (rather than adding/removing this node) keeps the
+		-- blink from shifting the rest of the layout.
+		playout.text.new("Ⓐ to select", {
+			alignment = kTextAlignment.center,
+			color = showPrompt and gfx.kColorBlack or gfx.kColorWhite,
+		}),
+	})
+
+	return playout.tree.new(root)
+end
 
 function TitleScene:init(...)
 	TitleScene.super.init(self, ...)
@@ -39,8 +70,10 @@ local function confirmSelection()
 		Noble.transition(GameSceneMain)
 	elseif scene.selected == 2 then
 		Noble.transition(GameSceneTest)
-	else
+	elseif scene.selected == 3 then
 		Noble.transition(InstructionsScene)
+	else
+		Noble.transition(SettingsScene)
 	end
 end
 
@@ -62,20 +95,11 @@ function TitleScene:update()
 	TitleScene.super.update(self)
 	self.t = self.t + Config.DT
 
-	local cx = Config.SCREEN_W / 2
+	local showPrompt = math.floor(self.t * 2) % 2 == 0
+	local img = buildTree(self.selected, showPrompt):draw()
 
 	gfx.setImageDrawMode(gfx.kDrawModeCopy)
-	gfx.drawTextAligned("* Mermaid Madness *", cx, 40, kTextAlignment.center)
-	gfx.drawTextAligned("a Playdate pirate voyage", cx, 62, kTextAlignment.center)
-
-	local menuTop = 158
-	for i, label in ipairs(MENU_ITEMS) do
-		local text = (i == self.selected) and ("> " .. label .. " <") or label
-		gfx.drawTextAligned(text, cx, menuTop + (i - 1) * 16, kTextAlignment.center)
-	end
-
-	-- Blinking prompt.
-	if math.floor(self.t * 2) % 2 == 0 then
-		gfx.drawTextAligned("Ⓐ to select", cx, menuTop + #MENU_ITEMS * 16 + 10, kTextAlignment.center)
-	end
+	local x = (Config.SCREEN_W - img.width) / 2
+	local y = (Config.SCREEN_H - img.height) / 2
+	img:draw(x, y)
 end

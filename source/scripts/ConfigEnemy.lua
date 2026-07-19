@@ -53,8 +53,8 @@ Config.MAX_ENEMIES          = 40
 -- A smaller, faster Enemy variant (see EnemySwordfish.lua) with a long spiked
 -- bill instead of a hull bow. Mirrors the base ENEMY_* tuning knobs above so
 -- it can be tuned independently.
-Config.ENEMY_SWORDFISH_SPEED      = math.floor(Config.ENEMY_SPEED * 1.5)   -- pixels / second, faster than the base enemy
-Config.ENEMY_SWORDFISH_ACCEL      = math.floor(Config.ENEMY_ACCEL * 1.4)   -- pixels / second^2
+Config.ENEMY_SWORDFISH_SPEED      = math.floor(Config.ENEMY_SPEED * 1.2)   -- pixels / second, faster than the base enemy
+Config.ENEMY_SWORDFISH_ACCEL      = math.floor(Config.ENEMY_ACCEL * 1.2)   -- pixels / second^2
 Config.ENEMY_SWORDFISH_TURN_RATE_MAX = 110  -- degrees / second at low speed
 Config.ENEMY_SWORDFISH_TURN_RATE_MIN = 30   -- degrees / second at/above max speed
 Config.ENEMY_SWORDFISH_TURN_RATE_SPEED_MULTIPLIER = 1.0

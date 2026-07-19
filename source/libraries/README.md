@@ -11,6 +11,7 @@ That populates:
 
 - `noble/` — Noble Engine (from https://github.com/NobleRobot/NobleEngine)
 - `pdParticles.lua` — pdParticles (from https://codeberg.org/PossiblyAxolotl/pdParticles)
+- `playout.lua` — playout, a UI layout library (from https://github.com/potch/playout)
 
 Alternatively, add Noble as a git submodule (see the top-level `.gitmodules`) and
 download `pdParticles.lua` manually.

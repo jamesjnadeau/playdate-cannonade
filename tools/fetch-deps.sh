@@ -6,6 +6,7 @@ set -euo pipefail
 
 NOBLE_REF="${NOBLE_REF:-main}"          # branch or tag of NobleEngine to use
 PARTICLES_REF="${PARTICLES_REF:-main}"  # branch/tag of pdParticles to use
+PLAYOUT_REF="${PLAYOUT_REF:-main}"      # branch/tag of playout to use
 
 ROOT="$(cd "$(dirname "$0")/.." && pwd)"
 LIB="$ROOT/source/libraries"
@@ -26,6 +27,14 @@ if [ ! -f "$LIB/pdParticles.lua" ]; then
 		"https://codeberg.org/PossiblyAxolotl/pdParticles/raw/branch/${PARTICLES_REF}/pdParticles.lua"
 else
 	echo "==> pdParticles already present"
+fi
+
+if [ ! -f "$LIB/playout.lua" ]; then
+	echo "==> Fetching playout ($PLAYOUT_REF)"
+	curl -fsSL -o "$LIB/playout.lua" \
+		"https://raw.githubusercontent.com/potch/playout/${PLAYOUT_REF}/playout.lua"
+else
+	echo "==> playout already present"
 fi
 
 echo "==> Dependencies ready."
