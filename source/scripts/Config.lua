@@ -85,7 +85,7 @@ Config.EXPLOSION_WIND_INFLUENCE = 0.4
 -- set max ship speed to half way between min/max wind speed
 Config.SHIP_MAX_SPEED = math.floor((Config.WIND_SPEED_MAX - Config.WIND_SPEED_MIN)/2) + Config.WIND_SPEED_MIN     -- pixels / second
 Config.SHIP_DEFAULT_SPEED = math.floor(Config.SHIP_MAX_SPEED * 0.1 )    -- guaranteed baseline forward speed regardless of sail/wind
-Config.SHIP_ACCEL        = math.floor(Config.SHIP_MAX_SPEED * 0.18 )       -- pixels / second, added per second while easing toward target speed
+Config.SHIP_ACCEL        = math.floor(Config.SHIP_MAX_SPEED * 0.3 )       -- pixels / second, added per second while easing toward target speed
 Config.SHIP_TURN_SCALE = 0.55   -- crank-degrees -> heading-degrees multiplier
 Config.SHIP_MAX_HEALTH = 5
 Config.SHIP_LENGTH    = 20      -- half-length of hull when drawn, default 22
@@ -148,9 +148,10 @@ Config.NO_TARGET_MARK_OFFSET = 30 -- distance (px) from the ship's center to tha
 -- Off-screen enemy indicators: enemies whose on-screen directions fall
 -- within OFFSCREEN_INDICATOR_GROUP_ANGLE of each other share a single arrow
 -- (with a count badge) instead of stacking separate ones.
-Config.OFFSCREEN_INDICATOR_MARGIN      = 50  -- px inset from the screen edge
+Config.OFFSCREEN_INDICATOR_MARGIN      = 75  -- px inset from the screen edge
 Config.OFFSCREEN_INDICATOR_SIZE        = 14  -- pixel size of the arrow glyph
 Config.OFFSCREEN_INDICATOR_GROUP_ANGLE = 18  -- degrees; enemies this close together share one indicator
+Config.OFFSCREEN_INDICATOR_COUNT_SIZE  = 24  -- pixel height of the group count text
 
 -- Toggled from SettingsScene (reached from the title screen); all default to visible.
 Config.HUD_SHOW_WIND_SPEED     = true
@@ -162,6 +163,7 @@ Config.HUD_SHOW_PLAYER_SPEED   = true
 Config.HUD_HEART_MARGIN_X = 6   -- px inset from the left screen edge to the first heart
 Config.HUD_HEART_MARGIN_Y = 4   -- px inset from the top screen edge
 Config.HUD_HEART_SPACING  = 20  -- px from one heart's left edge to the next's
+Config.HUD_EMPTY_HEART_SCALE = 0.75  -- size of a missing heart, relative to a full one
 
 -- Wind-change bar (test scene only, see GameSceneTest:drawHUD): drawn as a
 -- crawling sine wave instead of a flat bar to match the water's look.

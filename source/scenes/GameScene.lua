@@ -582,6 +582,23 @@ local function getNoTargetMarkImage()
 	return noTargetMarkImage
 end
 
+-- Lazily-built heart glyph images, cached for the same reason as above and
+-- so drawHUD can scale them (drawText can't be scaled, images can).
+local fullHeartImage = nil
+local emptyHeartImage = nil
+local function getFullHeartImage()
+	if not fullHeartImage then
+		fullHeartImage = gfx.imageWithText("❤️", 20, 20)
+	end
+	return fullHeartImage
+end
+local function getEmptyHeartImage()
+	if not emptyHeartImage then
+		emptyHeartImage = gfx.imageWithText("🤍", 20, 20)
+	end
+	return emptyHeartImage
+end
+
 -- Shown on whichever side the player is charging when no enemy is in range
 -- on that side, at Config.NO_TARGET_MARK_OFFSET from the ship and scaled to
 -- Config.NO_TARGET_MARK_SIZE.
@@ -643,7 +660,7 @@ function GameScene:drawOffscreenArrows(camX, camY)
 				end
 			end
 			if not group then
-				group = { sumX = 0, sumY = 0, count = 0, angle = ang, warning = nil }
+				group = { sumX = 0, sumY = 0, count = 0, angle = ang, warning = nil, minDist = nil }
 				groups[#groups + 1] = group
 			end
 
@@ -654,20 +671,52 @@ function GameScene:drawOffscreenArrows(camX, camY)
 			if e.teleportWarning and (not group.warning or e.teleportWarning < group.warning) then
 				group.warning = e.teleportWarning
 			end
+			local dist = Utils.dist(self.ship.x, self.ship.y, e.x, e.y)
+			if not group.minDist or dist < group.minDist then
+				group.minDist = dist
+			end
 		end
 	end
 
 	gfx.setColor(gfx.kColorBlack)
 	for _, g in ipairs(groups) do
 		local hx, hy = Utils.heading(g.angle)
+
 		local px = Utils.clamp(cx + hx * reach, margin, Config.SCREEN_W - margin)
 		local py = Utils.clamp(cy + hy * reach, margin, Config.SCREEN_H - margin)
-		self:drawArrow(px, py, g.angle, size)
+		local ex = Utils.clamp(cx + hx * reach, 0, Config.SCREEN_W)
+		local ey = Utils.clamp(cy + hy * reach, 0, Config.SCREEN_H)
+
+		-- A group's count replaces the arrow outright (the number alone is
+		-- clearer than trying to cram it inside a tiny triangle).
+		local labelHeight = size
+		local radius = size -- how far the indicator extends from px,py toward the edge
+		local countImg, countW, countH, countScale
 		if g.count > 1 then
-			gfx.drawTextAligned(tostring(g.count), px, py - size - 12, kTextAlignment.center)
+			countImg = gfx.imageWithText(tostring(g.count), 100, 100)
+			local iw, ih = countImg:getSize()
+			countScale = Config.OFFSCREEN_INDICATOR_COUNT_SIZE / ih
+			countW, countH = iw * countScale, ih * countScale
+			labelHeight = countH
+			radius = math.max(countW, countH) / 2
+		end
+
+		-- Line starts at the indicator's outer edge (not its center) and
+		-- reaches the true screen edge when the nearest enemy in the group
+		-- is at Config.ENEMY_MAX_DISTANCE.
+		local fraction = Utils.clamp(g.minDist / Config.ENEMY_MAX_DISTANCE, 0, 1)
+		local startX, startY = px + hx * radius, py + hy * radius
+		local endX, endY = px + (ex - px) * fraction, py + (ey - py) * fraction
+		gfx.drawLine(startX, startY, endX, endY)
+
+		if countImg then
+			gfx.setImageDrawMode(gfx.kDrawModeCopy)
+			countImg:drawScaled(px - countW / 2, py - countH / 2, countScale)
+		else
+			self:drawArrow(px, py, g.angle, size)
 		end
 		if g.warning then
-			gfx.drawTextAligned(tostring(math.ceil(g.warning)), px, py + size + 2, kTextAlignment.center)
+			gfx.drawTextAligned(tostring(math.ceil(g.warning)), px, py + labelHeight / 2 + 2, kTextAlignment.center)
 		end
 	end
 end
@@ -679,17 +728,33 @@ function GameScene:drawArrow(px, py, angleDeg, size)
 	local tipx, tipy = px + hx * size, py + hy * size
 	local b1x, b1y = px - hx * size * 0.4 + rx * size * 0.6, py - hy * size * 0.4 + ry * size * 0.6
 	local b2x, b2y = px - hx * size * 0.4 - rx * size * 0.6, py - hy * size * 0.4 - ry * size * 0.6
-	gfx.fillTriangle(tipx, tipy, b1x, b1y, b2x, b2y)
+	gfx.drawLine(tipx, tipy, b1x, b1y)
+	gfx.drawLine(b1x, b1y, b2x, b2y)
+	gfx.drawLine(b2x, b2y, tipx, tipy)
 end
 
 function GameScene:drawHUD()
 	gfx.setImageDrawMode(gfx.kDrawModeCopy)
 
-	-- Health pips (top-left)
+	-- Health pips (top-left): whole hearts drawn full-size, the next
+	-- (partially-lost) heart scaled down to how much of it remains, and
+	-- the rest drawn as small empty hearts.
+	local fullHeart = getFullHeartImage()
+	local emptyHeart = getEmptyHeartImage()
+	local fw, fh = fullHeart:getSize()
+	local wholeHearts = math.floor(math.max(0, self.ship.health))
+	local remainder = self.ship.health - wholeHearts
 	for i = 1, Config.SHIP_MAX_HEALTH do
 		local x = Config.HUD_HEART_MARGIN_X + (i - 1) * Config.HUD_HEART_SPACING
-		local heart = (i <= self.ship.health) and "❤️" or "🤍"
-		gfx.drawText(heart, x, Config.HUD_HEART_MARGIN_Y)
+		if i <= wholeHearts then
+			fullHeart:draw(x, Config.HUD_HEART_MARGIN_Y)
+		elseif i == wholeHearts + 1 and remainder > 0 then
+			local scale = remainder
+			fullHeart:drawScaled(x + fw * (1 - scale) / 2, Config.HUD_HEART_MARGIN_Y + fh * (1 - scale) / 2, scale)
+		else
+			local scale = Config.HUD_EMPTY_HEART_SCALE
+			emptyHeart:drawScaled(x + fw * (1 - scale) / 2, Config.HUD_HEART_MARGIN_Y + fh * (1 - scale) / 2, scale)
+		end
 	end
 
 	-- Speed gauge (bottom-left)
