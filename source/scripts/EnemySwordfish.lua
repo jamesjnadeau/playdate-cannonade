@@ -26,6 +26,7 @@ function EnemySwordfish:init(x, y, heading)
 	self.color = Config.ENEMY_SWORDFISH_COLOR
 	self.outlineColor = Config.ENEMY_SWORDFISH_OUTLINE_COLOR
 	self.health = Config.ENEMY_SWORDFISH_HEALTH
+	self.maxHealth = self.health
 	self.speed = 0
 
 	self.moveSpeed = Config.ENEMY_SWORDFISH_SPEED

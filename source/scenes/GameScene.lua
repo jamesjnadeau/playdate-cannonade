@@ -11,6 +11,7 @@ import "scripts/Utils"
 import "scripts/Player"
 import "scripts/Enemy"
 import "scripts/EnemySwordfish"
+import "scripts/EnemyKraken"
 import "scripts/Tridentball"
 
 local gfx <const> = playdate.graphics
@@ -247,10 +248,11 @@ end
 -- ---------------------------------------------------------------------------
 
 -- Enemy classes eligible for random spawning, gated by level via each
--- class's minLevel (Enemy.minLevel / EnemySwordfish.minLevel, driven by
--- Config.ENEMY_MIN_LEVEL / Config.ENEMY_SWORDFISH_MIN_LEVEL). Add new enemy
--- types here to fold them into spawnEnemy's random pick below.
-GameScene.enemyTypes = { Enemy, EnemySwordfish }
+-- class's minLevel (Enemy.minLevel / EnemySwordfish.minLevel / EnemyKraken.minLevel,
+-- driven by Config.ENEMY_MIN_LEVEL / Config.ENEMY_SWORDFISH_MIN_LEVEL /
+-- Config.ENEMY_KRAKEN_MIN_LEVEL). Add new enemy types here to fold them into
+-- spawnEnemy's random pick below.
+GameScene.enemyTypes = { Enemy, EnemySwordfish, EnemyKraken }
 
 -- Spawns one enemy at a random position around the ship. With no argument,
 -- picks uniformly among GameScene.enemyTypes entries unlocked at self.level

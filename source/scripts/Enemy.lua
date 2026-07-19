@@ -27,6 +27,7 @@ function Enemy:init(x, y, heading)
 	self.length = Config.ENEMY_LENGTH
 	self.color = gfx.kColorBlack
 	self.health = 1
+	self.maxHealth = self.health -- see Enemy:draw's health bar, shown once health < maxHealth
 	self.speed = 0
 	self.teleportWarning = nil -- seconds left before relocation; nil when not pending
 
@@ -111,8 +112,32 @@ end
 
 function Enemy:draw()
 	Enemy.super.draw(self)
-	
+
 	local hx, hy = Utils.heading(self.heading)
 	gfx.setColor(gfx.kColorWhite)
 	gfx.fillCircleAtPoint(self.x + hx * self.eyeOffset, self.y + hy * self.eyeOffset, 2)
+
+	if self.health < self.maxHealth then
+		self:drawHealthBar()
+	end
+end
+
+-- Small bar centered under the hull, only shown once damaged (see draw()
+-- above) -- white background with a black outline and a black fill
+-- proportional to health remaining, so it reads at a glance regardless of
+-- what's behind the enemy.
+function Enemy:drawHealthBar()
+	local w, h = Config.ENEMY_HEALTH_BAR_WIDTH, Config.ENEMY_HEALTH_BAR_HEIGHT
+	local x = self.x - w / 2
+	local y = self.y + self.radius + Config.ENEMY_HEALTH_BAR_MARGIN
+
+	gfx.setColor(gfx.kColorWhite)
+	gfx.fillRect(x, y, w, h)
+
+	local frac = math.max(0, self.health / self.maxHealth)
+	gfx.setColor(gfx.kColorBlack)
+	if frac > 0 then
+		gfx.fillRect(x, y, w * frac, h)
+	end
+	gfx.drawRect(x, y, w, h)
 end

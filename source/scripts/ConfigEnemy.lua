@@ -41,6 +41,12 @@ Config.ENEMY_MIN_LEVEL = 1
 Config.ENEMY_MAX_DISTANCE      = 900
 Config.ENEMY_TELEPORT_WARN_TIME = 3     -- seconds of countdown warning before relocation
 
+-- Health bar shown under an enemy once it's taken damage (see Enemy:draw /
+-- Enemy:drawHealthBar) -- hidden entirely at full health.
+Config.ENEMY_HEALTH_BAR_WIDTH  = 20  -- px wide
+Config.ENEMY_HEALTH_BAR_HEIGHT = 3   -- px tall
+Config.ENEMY_HEALTH_BAR_MARGIN = 4   -- px gap between the hull's collision radius and the bar's top edge
+
 -- Difficulty ramp: spawn interval shrinks from START to FLOOR over RAMP seconds
 Config.SPAWN_INTERVAL_START = 2.6
 Config.SPAWN_INTERVAL_FLOOR = 0.55
@@ -69,5 +75,28 @@ Config.ENEMY_SWORDFISH_COLOR      = gfx.kColorBlack
 Config.ENEMY_SWORDFISH_OUTLINE_COLOR = gfx.kColorWhite -- distinguishes it from the base enemy's silhouette at a glance
 Config.ENEMY_SWORDFISH_EYE_OFFSET = 4   -- px the eye dot sits ahead of center, scaled down to match its smaller hull
 Config.ENEMY_SWORDFISH_MIN_LEVEL  = 3   -- unlocked starting this level (appears after level 2) -- see Config.ENEMY_MIN_LEVEL
+
+------------------------
+-- Enemy: Kraken --
+------------------------
+-- A slow, tougher Enemy variant (see EnemyKraken.lua) drawn as a round body
+-- with 3 small circles trailing off ahead of it in a row, doubling as a
+-- direction indicator in place of the base Enemy's hull + eye dot.
+Config.ENEMY_KRAKEN_SPEED      = math.floor(Config.ENEMY_SPEED * 0.5)   -- pixels / second, much slower than the base enemy
+Config.ENEMY_KRAKEN_ACCEL      = math.floor(Config.ENEMY_ACCEL * 0.5)   -- pixels / second^2
+Config.ENEMY_KRAKEN_TURN_RATE_MAX = Config.ENEMY_TURN_RATE_MAX
+Config.ENEMY_KRAKEN_TURN_RATE_MIN = Config.ENEMY_TURN_RATE_MIN
+Config.ENEMY_KRAKEN_TURN_RATE_SPEED_MULTIPLIER = Config.ENEMY_TURN_RATE_SPEED_MULTIPLIER
+Config.ENEMY_KRAKEN_BODY_RADIUS = 14  -- px radius of the main body circle
+Config.ENEMY_KRAKEN_RADIUS     = Config.ENEMY_KRAKEN_BODY_RADIUS  -- collision radius; the direction dots are purely visual
+Config.ENEMY_KRAKEN_DOT_RADIUS  = 4  -- px radius of each of the 3 direction-indicator circles
+Config.ENEMY_KRAKEN_DOT_SPACING = 9  -- px between consecutive dot centers
+Config.ENEMY_KRAKEN_DOT_OFFSET  = Config.ENEMY_KRAKEN_BODY_RADIUS + 6  -- px from body center to the nearest dot's center, along heading
+Config.ENEMY_KRAKEN_HEALTH     = 3
+Config.ENEMY_KRAKEN_DAMAGE     = Config.ENEMY_DAMAGE
+Config.ENEMY_KRAKEN_WIND_MULTIPLIER = Config.ENEMY_WIND_MULTIPLIER
+Config.ENEMY_KRAKEN_COLOR      = gfx.kColorBlack
+Config.ENEMY_KRAKEN_OUTLINE_COLOR = gfx.kColorWhite
+Config.ENEMY_KRAKEN_MIN_LEVEL  = 4   -- unlocked starting this level, tougher than the swordfish -- see Config.ENEMY_MIN_LEVEL
 
 return Config
