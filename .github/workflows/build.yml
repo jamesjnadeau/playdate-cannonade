@@ -1,4 +1,4 @@
-name: Build Tridentade
+name: Build and Test Game
 
 on:
   push:
