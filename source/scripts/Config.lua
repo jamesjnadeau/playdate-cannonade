@@ -166,7 +166,7 @@ Config.HUD_HEART_MARGIN_Y = 4   -- px inset from the top screen edge
 Config.HUD_HEART_SPACING  = 20  -- px from one heart's left edge to the next's
 Config.HUD_EMPTY_HEART_SCALE = 0.75  -- size of a missing heart, relative to a full one
 
--- Wind-change bar (test scene only, see GameSceneTest:drawHUD): drawn as a
+-- Wind-change bar (test scene only, see GameSceneTraining:drawHUD): drawn as a
 -- crawling sine wave instead of a flat bar to match the water's look.
 Config.WIND_BAR_WAVE_AMPLITUDE  = 3   -- px the wave bulges above/below its baseline
 Config.WIND_BAR_WAVE_WAVELENGTH = 20  -- px length of one full wave cycle

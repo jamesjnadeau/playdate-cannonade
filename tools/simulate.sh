@@ -7,7 +7,9 @@
 # forwarded here as a Simulator launch argument instead; main.lua reads it
 # back out of playdate.argv[1] to pick the boot scene, falling back to
 # Config.START_SCENE if unset. See main.lua's sceneByName table for valid
-# values (e.g. Title, GameMain, GameTest).
+# values (e.g. Title, GameMain, GameTraining).
+./tools/build.sh
+
 if [ -n "$MERMAID_START_SCENE" ]; then
 	"$PLAYDATE_SDK_PATH/bin/PlaydateSimulator" MermaidMadness.pdx "$MERMAID_START_SCENE"
 else

@@ -1,9 +1,9 @@
 -- EnemySelectScene.lua
--- Reached from GameSceneTest's "Select Enemy" system-menu item. Lists every
+-- Reached from GameSceneTraining's "Select Enemy" system-menu item. Lists every
 -- type in GameScene.enemyTypes (rendered with the playout UI library, see
--- libraries/playout.lua) so you can force GameSceneTest to spawn a specific
+-- libraries/playout.lua) so you can force GameSceneTraining to spawn a specific
 -- type on Ⓐ instead of a random one. Up/Down move the highlight, Ⓐ confirms
--- and returns to GameSceneTest, Ⓑ cancels back without changing the current
+-- and returns to GameSceneTraining, Ⓑ cancels back without changing the current
 -- selection.
 
 import "scripts/Config"
@@ -59,11 +59,11 @@ function EnemySelectScene:init(...)
 	EnemySelectScene.super.init(self, ...)
 	self.backgroundColor = gfx.kColorWhite
 
-	-- Default to whatever GameSceneTest currently has selected (nil / random
+	-- Default to whatever GameSceneTraining currently has selected (nil / random
 	-- falls back to the first entry) so reopening the menu shows your last pick.
 	self.selected = 1
 	for i, EnemyType in ipairs(GameScene.enemyTypes) do
-		if EnemyType == GameSceneTest.selectedEnemyType then
+		if EnemyType == GameSceneTraining.selectedEnemyType then
 			self.selected = i
 			break
 		end
@@ -103,11 +103,11 @@ EnemySelectScene.inputHandler = {
 	downButtonDown = function() moveSelection(1) end,
 	AButtonDown = function()
 		if not scene then return end
-		GameSceneTest.selectedEnemyType = GameScene.enemyTypes[scene.selected]
-		Noble.transition(GameSceneTest)
+		GameSceneTraining.selectedEnemyType = GameScene.enemyTypes[scene.selected]
+		Noble.transition(GameSceneTraining)
 	end,
 	BButtonDown = function()
-		if scene then Noble.transition(GameSceneTest) end
+		if scene then Noble.transition(GameSceneTraining) end
 	end,
 }
 

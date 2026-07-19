@@ -1,5 +1,5 @@
 -- GameScene.lua
--- Base class for the sailing/combat scenes (GameSceneMain, GameSceneTest).
+-- Base class for the sailing/combat scenes (GameSceneMain, GameSceneTraining).
 -- Holds everything they share: ship/wind/trident physics, enemy and
 -- tridentball collision handling, and all rendering. Subclasses hook in
 -- their own enemy-spawning policy and extra HUD text; see updateSpawning()
@@ -298,9 +298,9 @@ GameScene.enemyTypes = { Enemy, EnemySwordfish, EnemyKraken }
 -- Spawns one enemy at a random position around the ship. With no argument,
 -- picks uniformly among GameScene.enemyTypes entries unlocked at self.level
 -- (self.level is nil for scenes without level progression, e.g.
--- GameSceneTest -- treated as level 1). Pass forcedType (one of
+-- GameSceneTraining -- treated as level 1). Pass forcedType (one of
 -- GameScene.enemyTypes) to spawn that type regardless of level gating --
--- see GameSceneTest, which uses this for its enemy picker. Returns whether
+-- see GameSceneTraining, which uses this for its enemy picker. Returns whether
 -- it actually spawned one (false if already at MAX_ENEMIES). Subclasses that
 -- gate spawning further (e.g. a per-level cap) should override this, check
 -- their own condition, then delegate to GameScene.super.spawnEnemy(self).
@@ -332,7 +332,7 @@ function GameScene:spawnEnemy(forcedType)
 end
 
 -- Hook for automatic spawning; called once per tick. The base scene never
--- spawns on its own (GameSceneTest relies on this); GameSceneMain overrides
+-- spawns on its own (GameSceneTraining relies on this); GameSceneMain overrides
 -- it to spawn on a timer.
 ---@param dt number
 function GameScene:updateSpawning(dt) end

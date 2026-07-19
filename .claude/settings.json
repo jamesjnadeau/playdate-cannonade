@@ -4,6 +4,8 @@
       "Bash(lua5.4 *)",
       "Bash(which *)",
       "Bash(bash tests/run.sh)",
+      "Bash(bash tools/simulate.sh)",
+      "Bash(MERMAID_START_SCENE=* bash tools/simulate.sh)",
       "Bash(grep *)",
       "WebSearch",
       "WebFetch(domain:github.com)",

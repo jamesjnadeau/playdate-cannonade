@@ -15,17 +15,17 @@ keys a scene reads out of it, if any.
 ```mermaid
 flowchart TD
     Title["TitleScene"] -->|"Play (A)"| GameMain["GameSceneMain"]
-    Title -->|"Test Enemies (A)"| GameTest["GameSceneTest"]
+    Title -->|"Training (A)"| GameTraining["GameSceneTraining"]
     Title -->|"Instructions (A)"| Instructions["InstructionsScene"]
     Title -->|"Settings (A)"| Settings["SettingsScene"]
 
     Instructions -->|"B"| Title
     Settings -->|"B"| Title
 
-    GameTest -->|"B"| Title
-    GameTest -->|"system menu: Select Enemy"| EnemySelect["EnemySelectScene"]
-    EnemySelect -->|"A: confirm"| GameTest
-    EnemySelect -->|"B: cancel"| GameTest
+    GameTraining -->|"B"| Title
+    GameTraining -->|"system menu: Select Enemy"| EnemySelect["EnemySelectScene"]
+    EnemySelect -->|"A: confirm"| GameTraining
+    EnemySelect -->|"B: cancel"| GameTraining
 
     GameMain -->|"level target cleared"| LevelComplete["LevelCompleteScene"]
     GameMain -->|"game over, A: restart"| GameMain
@@ -54,7 +54,7 @@ Start screen — the game's entry point (`main.lua` calls
 - **Controls:** Up/Down move the highlight (wraps); A confirms.
 - **Menu items → transitions:**
   - "Play" → `GameSceneMain`
-  - "Test Enemies" → `GameSceneTest`
+  - "Training" → `GameSceneTraining`
   - "Instructions" → `InstructionsScene`
   - "Settings" → `SettingsScene`
 - **sceneProperties read:** none.
@@ -71,7 +71,7 @@ kill target hands off to `LevelCompleteScene`; every wind-escalation step
 - **Reached from:** `TitleScene` ("Play", no properties — starts at level 1),
   `UpgradeSelectScene` or `WindShiftScene` (continuing a run).
 - **Controls:** crank steers, Up/Down trim sail, Left/Right charge+release a
-  broadside (shared with `GameSceneTest` via `GameScene.buildSharedInputHandler`).
+  broadside (shared with `GameSceneTraining` via `GameScene.buildSharedInputHandler`).
   A restarts the run *from level 1* once `gameOver` is true — otherwise A does
   nothing (this isn't a pause/resume, it's a full restart).
 - **sceneProperties read:** `level` (default 1), `totalDefeated` (default 0,
@@ -80,41 +80,41 @@ kill target hands off to `LevelCompleteScene`; every wind-escalation step
   - Level's kill target reached → `Noble.transition(LevelCompleteScene, ..., { completedLevel, totalDefeated })`
   - `gameOver` and A pressed → `Noble.transition(GameSceneMain)` (fresh run)
 
-## GameSceneTest
+## GameSceneTraining
 
 A sandbox for testing ship/wind/combat feel: no automatic spawning or level
 progression. Adds a "Select Enemy" item to the system menu while active (see
 the 3-item system-menu cap note in the repo's `CLAUDE.md` before adding
 another system-menu item anywhere).
 
-- **Reached from:** `TitleScene` ("Test Enemies"), `EnemySelectScene` (after
+- **Reached from:** `TitleScene` ("Training"), `EnemySelectScene` (after
   confirming or cancelling a pick).
 - **Controls:** shared steer/trim/charge bindings (see `GameSceneMain` above);
-  A spawns one enemy (`GameSceneTest.selectedEnemyType`, or random if unset);
+  A spawns one enemy (`GameSceneTraining.selectedEnemyType`, or random if unset);
   B returns to `TitleScene`.
 - **sceneProperties read:** none.
 - **Transitions out:**
   - B → `Noble.transition(TitleScene)`
   - System menu "Select Enemy" → `Noble.transition(EnemySelectScene)`
-- **Notable state:** `GameSceneTest.selectedEnemyType` is a *class-level*
+- **Notable state:** `GameSceneTraining.selectedEnemyType` is a *class-level*
   field (not per-instance), so it survives this scene being torn down and
   recreated — that's how `EnemySelectScene`'s pick sticks across a
-  transition back into a brand-new `GameSceneTest` instance.
+  transition back into a brand-new `GameSceneTraining` instance.
 
 ## EnemySelectScene
 
-Reached only from `GameSceneTest`'s system-menu item. Lists every entry in
+Reached only from `GameSceneTraining`'s system-menu item. Lists every entry in
 `GameScene.enemyTypes` so you can force a specific type instead of a random
 one.
 
-- **Reached from:** `GameSceneTest` (system menu "Select Enemy").
+- **Reached from:** `GameSceneTraining` (system menu "Select Enemy").
 - **Controls:** Up/Down move the highlight (wraps, defaults to whatever
-  `GameSceneTest.selectedEnemyType` currently is); A confirms and returns; B
+  `GameSceneTraining.selectedEnemyType` currently is); A confirms and returns; B
   cancels and returns without changing the selection.
-- **sceneProperties read:** none (reads `GameSceneTest.selectedEnemyType`
+- **sceneProperties read:** none (reads `GameSceneTraining.selectedEnemyType`
   directly).
-- **Transitions out:** A or B → `Noble.transition(GameSceneTest)` (A also
-  sets `GameSceneTest.selectedEnemyType` first).
+- **Transitions out:** A or B → `Noble.transition(GameSceneTraining)` (A also
+  sets `GameSceneTraining.selectedEnemyType` first).
 
 ## InstructionsScene
 
@@ -128,7 +128,7 @@ Static how-to-play text.
 
 Toggles the `Config.HUD_SHOW_*` flags (Wind Speed / Wind Direction / Player
 Speed) — moved here (out of the system menu) so the system menu stays free
-for scene-specific items like `GameSceneTest`'s "Select Enemy"; see the
+for scene-specific items like `GameSceneTraining`'s "Select Enemy"; see the
 3-item cap note in `CLAUDE.md`. Built with
 [playout](../libraries/playout.lua).
 

@@ -7,12 +7,12 @@
 -- and asserts each screen lands on the scene the flow diagram in
 -- source/scenes/Scenes.md says it should.
 --
--- GameSceneMain/GameSceneTest extend a lightweight test double
+-- GameSceneMain/GameSceneTraining extend a lightweight test double
 -- (tests/support/mock_game_scene.lua) instead of the real
 -- source/scenes/GameScene.lua: the real class builds a Player/Ship, sprites,
 -- and particle systems, which is real-Simulator territory per CLAUDE.md, not
 -- "does this button transition to the right scene." The double keeps
--- GameSceneMain/GameSceneTest's *own* code (level-clear detection, spawn
+-- GameSceneMain/GameSceneTraining's *own* code (level-clear detection, spawn
 -- caps, the enemy-select handoff) real and under test.
 
 dofile("tests/support/load_scenes.lua")
@@ -29,7 +29,7 @@ function TestSceneFlow:setUp()
 	for k, v in pairs(Config) do
 		self.configSnapshot[k] = v
 	end
-	GameSceneTest.selectedEnemyType = nil -- class-level field; survives scene transitions by design
+	GameSceneTraining.selectedEnemyType = nil -- class-level field; survives scene transitions by design
 	Noble.transition(TitleScene)
 end
 
@@ -47,7 +47,7 @@ end
 -- --- TitleScene ---------------------------------------------------------
 
 function TestSceneFlow:testTitleMenuNavigationWraps()
-	lu.assertEquals(Noble.currentScene().selected, 2) -- default: "Test Enemies"
+	lu.assertEquals(Noble.currentScene().selected, 2) -- default: "Training"
 
 	Noble.Input.fire("upButtonDown")
 	lu.assertEquals(Noble.currentScene().selected, 1) -- "Play"
@@ -57,7 +57,7 @@ function TestSceneFlow:testTitleMenuNavigationWraps()
 
 	Noble.Input.fire("downButtonDown")
 	Noble.Input.fire("downButtonDown")
-	lu.assertEquals(Noble.currentScene().selected, 2) -- back to "Test Enemies"
+	lu.assertEquals(Noble.currentScene().selected, 2) -- back to "Training"
 end
 
 function TestSceneFlow:testTitlePlaySelectionTransitionsToGameSceneMain()
@@ -71,9 +71,9 @@ function TestSceneFlow:testTitlePlaySelectionTransitionsToGameSceneMain()
 	lu.assertFalse(scene.gameOver)
 end
 
-function TestSceneFlow:testTitleTestEnemiesSelectionTransitionsToGameSceneTest()
-	Noble.Input.fire("AButtonDown") -- default selected == 2, "Test Enemies"
-	lu.assertEquals(currentClassName(), "GameSceneTest")
+function TestSceneFlow:testTitleTrainingSelectionTransitionsToGameSceneTraining()
+	Noble.Input.fire("AButtonDown") -- default selected == 2, "Training"
+	lu.assertEquals(currentClassName(), "GameSceneTraining")
 end
 
 function TestSceneFlow:testTitleInstructionsAndBack()
@@ -103,11 +103,11 @@ function TestSceneFlow:testTitleSettingsToggleAndBack()
 	lu.assertEquals(currentClassName(), "TitleScene")
 end
 
--- --- GameSceneTest / EnemySelectScene ------------------------------------
+-- --- GameSceneTraining / EnemySelectScene ------------------------------------
 
-function TestSceneFlow:testGameSceneTestSpawnAndReturnToTitle()
-	Noble.Input.fire("AButtonDown") -- Title -> GameSceneTest
-	lu.assertEquals(currentClassName(), "GameSceneTest")
+function TestSceneFlow:testGameSceneTrainingSpawnAndReturnToTitle()
+	Noble.Input.fire("AButtonDown") -- Title -> GameSceneTraining
+	lu.assertEquals(currentClassName(), "GameSceneTraining")
 
 	local scene = Noble.currentScene()
 	lu.assertEquals(#scene.enemies, 0)
@@ -116,11 +116,11 @@ function TestSceneFlow:testGameSceneTestSpawnAndReturnToTitle()
 
 	Noble.Input.fire("BButtonDown")
 	lu.assertEquals(currentClassName(), "TitleScene")
-	lu.assertEquals(#playdate.getSystemMenu():getMenuItems(), 0) -- GameSceneTest:finish() cleared it
+	lu.assertEquals(#playdate.getSystemMenu():getMenuItems(), 0) -- GameSceneTraining:finish() cleared it
 end
 
-function TestSceneFlow:testGameSceneTestEnemySelectConfirmSetsForcedType()
-	Noble.Input.fire("AButtonDown") -- Title -> GameSceneTest
+function TestSceneFlow:testGameSceneTrainingEnemySelectConfirmSetsForcedType()
+	Noble.Input.fire("AButtonDown") -- Title -> GameSceneTraining
 	local menuItems = playdate.getSystemMenu():getMenuItems()
 	lu.assertEquals(#menuItems, 1)
 	lu.assertEquals(menuItems[1].name, "Select Enemy")
@@ -133,8 +133,8 @@ function TestSceneFlow:testGameSceneTestEnemySelectConfirmSetsForcedType()
 	lu.assertEquals(Noble.currentScene().selected, 2)
 	Noble.Input.fire("AButtonDown")
 
-	lu.assertEquals(currentClassName(), "GameSceneTest")
-	lu.assertEquals(GameSceneTest.selectedEnemyType, StubEnemyB)
+	lu.assertEquals(currentClassName(), "GameSceneTraining")
+	lu.assertEquals(GameSceneTraining.selectedEnemyType, StubEnemyB)
 
 	-- Spawning now forces the selected type instead of a random pick.
 	local scene = Noble.currentScene()
@@ -142,15 +142,15 @@ function TestSceneFlow:testGameSceneTestEnemySelectConfirmSetsForcedType()
 	lu.assertEquals(getmetatable(scene.enemies[1]), StubEnemyB)
 end
 
-function TestSceneFlow:testGameSceneTestEnemySelectCancelLeavesSelectionUnchanged()
-	Noble.Input.fire("AButtonDown") -- Title -> GameSceneTest
+function TestSceneFlow:testGameSceneTrainingEnemySelectCancelLeavesSelectionUnchanged()
+	Noble.Input.fire("AButtonDown") -- Title -> GameSceneTraining
 	playdate.getSystemMenu():getMenuItems()[1].callback() -- -> EnemySelectScene
 
 	Noble.Input.fire("downButtonDown")
 	Noble.Input.fire("BButtonDown") -- cancel
 
-	lu.assertEquals(currentClassName(), "GameSceneTest")
-	lu.assertNil(GameSceneTest.selectedEnemyType)
+	lu.assertEquals(currentClassName(), "GameSceneTraining")
+	lu.assertNil(GameSceneTraining.selectedEnemyType)
 end
 
 -- --- GameSceneMain / LevelCompleteScene -----------------------------------

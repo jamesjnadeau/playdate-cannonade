@@ -1,13 +1,13 @@
 -- mock_game_scene.lua
 -- A lightweight test double for source/scenes/GameScene.lua, the base class
--- GameSceneMain and GameSceneTest extend.
+-- GameSceneMain and GameSceneTraining extend.
 --
 -- The real GameScene builds a Player/Ship, sprites, particles, wind physics,
 -- and drawing for every frame -- fine for the Simulator, but way past what a
 -- "does pressing this button transition to the right scene" test needs, and
 -- per CLAUDE.md's tests/ note, gameplay built on Noble Engine's class system
 -- still needs the real Simulator to verify. This stand-in keeps just the
--- surface GameSceneMain.lua/GameSceneTest.lua/EnemySelectScene.lua actually
+-- surface GameSceneMain.lua/GameSceneTraining.lua/EnemySelectScene.lua actually
 -- call: lifecycle (init/start/finish), GameScene.current(), the shared D-pad
 -- input handler (copied verbatim from the real class -- it only touches
 -- self.ship/self.trimInput/self:beginCharge/self:releaseCharge, all stubbed
@@ -73,7 +73,7 @@ function GameScene:windTuning()
 end
 
 -- Copied from the real GameScene.buildSharedInputHandler (source/scenes/GameScene.lua)
--- so the D-pad/crank/broadside bindings GameSceneMain and GameSceneTest both
+-- so the D-pad/crank/broadside bindings GameSceneMain and GameSceneTraining both
 -- build on top of get exercised for real, against the stubbed self.ship/
 -- self:beginCharge/self:releaseCharge below.
 function GameScene.buildSharedInputHandler(getScene)
@@ -153,7 +153,7 @@ GameScene.enemyTypes = { StubEnemyA, StubEnemyB }
 
 -- Mirrors the real GameScene:spawnEnemy's cap/forced-type/level-gating logic
 -- (source/scenes/GameScene.lua) without the position math or real Enemy
--- classes -- that's what GameSceneMain's per-level cap and GameSceneTest's
+-- classes -- that's what GameSceneMain's per-level cap and GameSceneTraining's
 -- forced-type picker actually build on top of.
 function GameScene:spawnEnemy(forcedType)
 	if #self.enemies >= Config.MAX_ENEMIES then return false end

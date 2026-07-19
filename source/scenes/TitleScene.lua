@@ -17,7 +17,7 @@ local scene = nil
 -- themselves are only referenced inside confirmSelection() below, which runs
 -- long after every scene file has finished loading, so load order here
 -- doesn't matter.
-local MENU_ITEMS = { "Play", "Test Enemies", "Instructions", "Settings" }
+local MENU_ITEMS = { "Play", "Training", "Instructions", "Settings" }
 
 -- Rebuilt every frame from :update() -- the blinking prompt needs to redraw
 -- regardless of whether the selection changed, and the tree is tiny enough
@@ -75,7 +75,7 @@ local function confirmSelection()
 	if scene.selected == 1 then
 		Noble.transition(GameSceneMain)
 	elseif scene.selected == 2 then
-		Noble.transition(GameSceneTest)
+		Noble.transition(GameSceneTraining)
 	elseif scene.selected == 3 then
 		Noble.transition(InstructionsScene)
 	else

@@ -98,7 +98,7 @@ function systemMenu:removeAllMenuItems()
 	systemMenuItems = {}
 end
 -- Test helper, not part of the real playdate API: inspect what scenes have
--- added, e.g. to invoke GameSceneTest's "Select Enemy" callback directly.
+-- added, e.g. to invoke GameSceneTraining's "Select Enemy" callback directly.
 function systemMenu:getMenuItems()
 	return systemMenuItems
 end

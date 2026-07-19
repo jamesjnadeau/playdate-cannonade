@@ -1,4 +1,4 @@
--- GameSceneTest.lua
+-- GameSceneTraining.lua
 -- A sandbox for testing ship/wind/combat feel: no automatic spawning or
 -- level progression. Press A to spawn one enemy, B to return to the title
 -- screen.
@@ -8,40 +8,40 @@ import "scenes/GameScene"
 
 local gfx <const> = playdate.graphics
 
----@class GameSceneTest : GameScene
+---@class GameSceneTraining : GameScene
 ---@field selectedEnemyType? table class-level: one of GameScene.enemyTypes, see below
-GameSceneTest = class("GameSceneTest").extends(GameScene) or GameSceneTest
+GameSceneTraining = class("GameSceneTraining").extends(GameScene) or GameSceneTraining
 
 -- Which enemy type Ⓐ spawns; nil means "pick randomly", matching the
 -- original behavior. Set by EnemySelectScene, reached via the "Select Enemy"
 -- system-menu item added below. A class field (not per-instance) so it
 -- survives the scene being torn down and recreated on transition.
-GameSceneTest.selectedEnemyType = nil
+GameSceneTraining.selectedEnemyType = nil
 
-GameSceneTest.inputHandler = GameScene.buildSharedInputHandler(GameScene.current)
-GameSceneTest.inputHandler.AButtonDown = function()
+GameSceneTraining.inputHandler = GameScene.buildSharedInputHandler(GameScene.current)
+GameSceneTraining.inputHandler.AButtonDown = function()
 	local s = GameScene.current()
-	if s then s:spawnEnemy(GameSceneTest.selectedEnemyType) end
+	if s then s:spawnEnemy(GameSceneTraining.selectedEnemyType) end
 end
-GameSceneTest.inputHandler.BButtonDown = function()
+GameSceneTraining.inputHandler.BButtonDown = function()
 	if GameScene.current() then Noble.transition(TitleScene) end
 end
 
-function GameSceneTest:start()
-	GameSceneTest.super.start(self)
+function GameSceneTraining:start()
+	GameSceneTraining.super.start(self)
 	playdate.getSystemMenu():addMenuItem("Select Enemy", function()
 		Noble.transition(EnemySelectScene)
 	end)
 end
 
-function GameSceneTest:finish()
-	GameSceneTest.super.finish(self)
+function GameSceneTraining:finish()
+	GameSceneTraining.super.finish(self)
 	playdate.getSystemMenu():removeAllMenuItems()
 end
 
-function GameSceneTest:drawModeStatus()
-	local enemyLabel = (GameSceneTest.selectedEnemyType and GameSceneTest.selectedEnemyType.displayName) or "Random"
-	gfx.drawTextAligned("TEST  " .. enemyLabel .. "  " .. #self.enemies .. " up", Config.SCREEN_W - 4, 6, kTextAlignment.right)
+function GameSceneTraining:drawModeStatus()
+	local enemyLabel = (GameSceneTraining.selectedEnemyType and GameSceneTraining.selectedEnemyType.displayName) or "Random"
+	gfx.drawTextAligned("TRAINING  " .. enemyLabel .. "  " .. #self.enemies .. " up", Config.SCREEN_W - 4, 6, kTextAlignment.right)
 end
 
 -- Draws a sine-wave polyline from x=0 to x=width along baseline y, so the
@@ -68,7 +68,7 @@ local function drawWaveBar(width, y, phase, dir)
 	end
 end
 
-function GameSceneTest:drawHUD()
+function GameSceneTraining:drawHUD()
 	GameScene.drawHUD(self)
 
 	gfx.setColor(gfx.kColorBlack)
@@ -90,6 +90,6 @@ function GameSceneTest:drawHUD()
 end
 
 ---@return string
-function GameSceneTest:gameOverPrompt()
+function GameSceneTraining:gameOverPrompt()
 	return "Ⓑ to return to menu"
 end

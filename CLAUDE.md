@@ -2,6 +2,8 @@
 
 ## Response Notes
 
+Before you respond, think if you should make any updates to this document that would help you be faster to respond in the future. Ask before making these updates to this document each time.
+
 Please end your summaries with a suggested commit message for git.
 
 If your change touches which scene the game boots into (`Config.START_SCENE`,
@@ -81,11 +83,11 @@ for the pattern) over the system menu when the setting doesn't need to be
 reachable from the pause menu specifically.
 
 History: this was first hit 2026-07-18 adding a "Select Enemy" system-menu
-item to `GameSceneTest.lua` alongside 3 always-on HUD-toggle checkmark items
+item to `GameSceneTraining.lua` alongside 3 always-on HUD-toggle checkmark items
 from `main.lua` — the 4th item never appeared. It was fixed by moving the HUD
 toggles (Wind Speed/Direction/Player Speed) out of the system menu entirely
 into `SettingsScene.lua` (reached from `TitleScene`'s "Settings" item). As of
-now `GameSceneTest`'s "Select Enemy" is the only system-menu item in the
+now `GameSceneTraining`'s "Select Enemy" is the only system-menu item in the
 game, so there's no live conflict — but the cap still applies if a future
 scene wants its own system-menu item alongside it.
 
@@ -103,7 +105,7 @@ Plain-`lua5.4` unit tests — no Playdate SDK or Simulator involved. Two tiers:
   `Noble.Input`, plus `support/mock_game_scene.lua`, a lightweight test double
   for `source/scenes/GameScene.lua` (real `Ship`/`Enemy`/sprite/particle
   gameplay is still real-Simulator territory — the double keeps
-  `GameSceneMain`/`GameSceneTest`'s *own* logic real while swapping out
+  `GameSceneMain`/`GameSceneTraining`'s *own* logic real while swapping out
   everything they build on top of). See `tests/test_scene_flow.lua`'s header
   for the full rationale.
 

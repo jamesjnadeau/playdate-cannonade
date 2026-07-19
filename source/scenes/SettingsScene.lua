@@ -2,7 +2,7 @@
 -- Reached from the title screen's "Settings" item. Lets you toggle the HUD
 -- visibility flags (Config.HUD_SHOW_*) that used to live as checkmark items
 -- in the system menu -- moved here so the system menu is free for
--- scene-specific items like GameSceneTest's "Select Enemy" (it caps out at
+-- scene-specific items like GameSceneTraining's "Select Enemy" (it caps out at
 -- 3 custom items total). Built with the playout UI library, see
 -- libraries/playout.lua. Up/Down move the highlight, Ⓐ toggles the
 -- highlighted setting, Ⓑ returns to the title screen.

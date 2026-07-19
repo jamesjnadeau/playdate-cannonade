@@ -29,7 +29,7 @@ import "scenes/InstructionsScene"
 import "scenes/SettingsScene"
 import "scenes/GameScene"
 import "scenes/GameSceneMain"
-import "scenes/GameSceneTest"
+import "scenes/GameSceneTraining"
 import "scenes/EnemySelectScene"
 import "scenes/LevelCompleteScene"
 import "scenes/UpgradeSelectScene"
@@ -47,7 +47,7 @@ local sceneByName = {
 	Instructions = InstructionsScene,
 	Settings = SettingsScene,
 	GameMain = GameSceneMain,
-	GameTest = GameSceneTest,
+	GameTraining = GameSceneTraining,
 	EnemySelect = EnemySelectScene,
 	LevelComplete = LevelCompleteScene,
 	UpgradeSelect = UpgradeSelectScene,
