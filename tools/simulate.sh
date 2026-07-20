@@ -11,7 +11,7 @@
 ./tools/build.sh
 
 if [ -n "$MERMAID_START_SCENE" ]; then
-	"$PLAYDATE_SDK_PATH/bin/PlaydateSimulator" MermaidMadness.pdx "$MERMAID_START_SCENE"
+	"$PLAYDATE_SDK_PATH/bin/PlaydateSimulator" PesteringPoseidon.pdx "$MERMAID_START_SCENE"
 else
-	"$PLAYDATE_SDK_PATH/bin/PlaydateSimulator" MermaidMadness.pdx
+	"$PLAYDATE_SDK_PATH/bin/PlaydateSimulator" PesteringPoseidon.pdx
 fi

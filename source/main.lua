@@ -1,5 +1,5 @@
 -- main.lua
--- Mermaid Madness — a top-down pirate sailing game for Playdate.
+-- Pestering Poseidon — a top-down pirate sailing game for Playdate.
 -- Built on Noble Engine (scenes/input/transitions) + pdParticles (wake/explosions).
 
 import "CoreLibs/graphics"

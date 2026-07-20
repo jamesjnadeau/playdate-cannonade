@@ -50,7 +50,7 @@ local function buildTree(selected)
 		border = 2,
 		borderRadius = 6,
 	}, {
-		playout.text.new("* Mermaid Madness *", { alignment = kTextAlignment.center }),
+		playout.text.new("* Pestering Poseidon *", { alignment = kTextAlignment.center }),
 		-- playout.text.new("Zeus and Posiden use you to dual.", { alignment = kTextAlignment.center }),
 		playout.box.new({ direction = playout.kDirectionVertical, spacing = 4 }, menuChildren),
 		playout.text.new("Ⓐ to select", { alignment = kTextAlignment.center }),

@@ -232,12 +232,12 @@ so a stale diagram and a stale test tend to go stale together — update both.
 
 ## `tools/`
 
-- **`build.sh`** — `$PLAYDATE_SDK_PATH/bin/pdc source MermaidMadness.pdx`.
+- **`build.sh`** — `$PLAYDATE_SDK_PATH/bin/pdc source PesteringPoseidon.pdx`.
   Compiles `source/` into the `.pdx` bundle. Requires `PLAYDATE_SDK_PATH` to
   be set and `fetch-deps.sh` to have been run first (`pdc` will fail on
   missing `import`s otherwise). Per the build/run-verification note above,
   this is for the user to run, not something to invoke to check your own work.
-- **`simulate.sh`** — `$PLAYDATE_SDK_PATH/bin/PlaydateSimulator MermaidMadness.pdx`.
+- **`simulate.sh`** — `$PLAYDATE_SDK_PATH/bin/PlaydateSimulator PesteringPoseidon.pdx`.
   Launches the compiled bundle in the Playdate Simulator. Same caveat as
   `build.sh`: the user runs this themselves. If `MERMAID_START_SCENE` is set
   in the environment, forwards it as a launch argument so `main.lua` can pick
