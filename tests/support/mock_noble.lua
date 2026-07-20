@@ -172,9 +172,20 @@ function playout.text.new(content, properties)
 	return { kind = "text", content = content, properties = properties or {} }
 end
 
+local fakeLayoutRect = { x = 0, y = 0, width = 0, height = 0 }
+
 playout.box = {}
 function playout.box.new(properties, children)
-	return { kind = "box", properties = properties or {}, children = children or {} }
+	local self = { kind = "box", properties = properties or {}, children = children or {} }
+	-- Real playout.lua's box:layout() computes real pixel sizes/positions.
+	-- Scenes that need to lay out taller-than-screen content (e.g.
+	-- UpgradeTestScene) call this directly rather than going through
+	-- tree:draw(), so it needs a stand-in too -- same "layout math isn't
+	-- tested" philosophy as the rest of this mock.
+	function self:layout(context)
+		return fakeLayoutRect
+	end
+	return self
 end
 
 local fakeTreeImage = { width = 0, height = 0 }
@@ -185,6 +196,29 @@ function playout.tree.new(root, options)
 	local self = { root = root, options = options or {} }
 	function self:draw()
 		return fakeTreeImage
+	end
+	-- Real playout.lua's tree:get(id) walks the built tree for a node whose
+	-- properties.id matches and returns it with a layout-computed .rect.
+	-- This stand-in skips the layout math (see file header) but still finds
+	-- the node by id and gives it a dummy .rect, since scenes like
+	-- UpgradeTestScene read .rect off the result unconditionally.
+	function self:get(id)
+		local function walk(node)
+			if node.properties and node.properties.id == id then
+				return node
+			end
+			if node.children then
+				for i = 1, #node.children do
+					local found = walk(node.children[i])
+					if found then return found end
+				end
+			end
+		end
+		local found = walk(root)
+		if found then
+			found.rect = found.rect or { x = 0, y = 0, width = 0, height = 0 }
+		end
+		return found
 	end
 	return self
 end
