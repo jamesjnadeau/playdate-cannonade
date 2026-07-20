@@ -14,11 +14,11 @@ keys a scene reads out of it, if any.
 
 ```mermaid
 flowchart TD
-    Title["TitleScene"] -->|"Play (A), Config.DEMO_MODE off"| GameMain["GameSceneMain"]
-    Title -->|"Play (A), Config.DEMO_MODE on"| GameDemo["GameSceneDemo"]
-    Title -->|"Training (A)"| GameTraining["GameSceneTraining"]
-    Title -->|"Instructions (A)"| Instructions["InstructionsScene"]
-    Title -->|"Settings (A)"| Settings["SettingsScene"]
+    Title["TitleScene"] -->|"Play (A/B), Config.DEMO_MODE off"| GameMain["GameSceneMain"]
+    Title -->|"Play (A/B), Config.DEMO_MODE on"| GameDemo["GameSceneDemo"]
+    Title -->|"Training (A/B)"| GameTraining["GameSceneTraining"]
+    Title -->|"Instructions (A/B)"| Instructions["InstructionsScene"]
+    Title -->|"Settings (A/B)"| Settings["SettingsScene"]
 
     Instructions -->|"B"| Title
     Settings -->|"B"| Title
@@ -67,7 +67,7 @@ Start screen — the game's entry point (`main.lua` calls
 [playout](../libraries/playout.lua).
 
 - **Reached from:** app launch only.
-- **Controls:** Up/Down move the highlight (wraps); A confirms.
+- **Controls:** Up/Down move the highlight (wraps); A or B confirms.
 - **Menu items → transitions:**
   - "Play" → `GameSceneMain` (or `GameSceneDemo`, if `Config.DEMO_MODE` is on)
   - "Training" → `GameSceneTraining`

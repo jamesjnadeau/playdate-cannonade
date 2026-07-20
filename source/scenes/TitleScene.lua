@@ -1,5 +1,5 @@
 -- TitleScene.lua
--- Start screen: Up/Down pick a scene, A confirms. Rendered with the playout
+-- Start screen: Up/Down pick a scene, A or B confirms. Rendered with the playout
 -- UI library, see libraries/playout.lua.
 
 import "scripts/utilities/Config"
@@ -29,7 +29,7 @@ local MENU_ITEMS = { "Play", "Training", "Instructions", "Settings" }
 
 -- Only depends on `selected`, so it's rebuilt on demand (see rebuildMenu())
 -- rather than every :update() frame -- nothing about the card changes
--- frame-to-frame anymore now that the "Ⓐ to select" prompt doesn't blink.
+-- frame-to-frame.
 ---@param selected integer
 ---@return table playout tree
 local function buildTree(selected)
@@ -53,7 +53,6 @@ local function buildTree(selected)
 		playout.text.new("* Pestering Poseidon *", { alignment = kTextAlignment.center }),
 		-- playout.text.new("Zeus and Posiden use you to dual.", { alignment = kTextAlignment.center }),
 		playout.box.new({ direction = playout.kDirectionVertical, spacing = 4 }, menuChildren),
-		playout.text.new("Ⓐ to select", { alignment = kTextAlignment.center }),
 	})
 
 	return playout.tree.new(root)
@@ -115,6 +114,7 @@ TitleScene.inputHandler = {
 		scene:rebuildMenu()
 	end,
 	AButtonDown = function() confirmSelection() end,
+	BButtonDown = function() confirmSelection() end,
 }
 
 function TitleScene:update()
