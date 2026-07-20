@@ -16,14 +16,14 @@ local gfx <const> = playdate.graphics
 local floor <const> = math.floor
 
 MenuCard.CARD_MARGIN = 8
-MenuCard.CARD_BORDER = 2
+MenuCard.CARD_BORDER = 0
 MenuCard.CARD_RADIUS = 6
 MenuCard.CARD_PADDING = 8
 -- Gap between the title/footer and the menu+description row below/above them.
 MenuCard.ROW_GAP = 6
 -- Menu (left) vs. description (right) split of the middle row, and the
 -- divider line drawn between them.
-MenuCard.MENU_FRACTION = 3 / 4
+MenuCard.MENU_FRACTION = 1 / 2
 MenuCard.DIVIDER_GAP = 6
 
 ---@class MenuCard.Layout
@@ -72,6 +72,8 @@ function MenuCard.build(titleText, footerText, items, selectedIndex, font)
 		direction = playout.kDirectionVertical,
 		spacing = 4,
 		padding = 4,
+		border = 0,
+		borderColor = 0,
 		hAlign = playout.kAlignStart,
 		width = menuWidth,
 		maxHeight = math.huge,
@@ -117,8 +119,8 @@ function MenuCard.draw(layout)
 	gfx.setColor(gfx.kColorWhite)
 	gfx.fillRoundRect(cardX, cardY, cardW, cardH, MenuCard.CARD_RADIUS)
 	gfx.setColor(gfx.kColorBlack)
-	gfx.setLineWidth(MenuCard.CARD_BORDER)
-	gfx.drawRoundRect(cardX, cardY, cardW, cardH, MenuCard.CARD_RADIUS)
+	-- gfx.setLineWidth(MenuCard.CARD_BORDER)
+	-- gfx.drawRoundRect(cardX, cardY, cardW, cardH, MenuCard.CARD_RADIUS)
 
 	local contentX = cardX + MenuCard.CARD_PADDING
 	local contentY = cardY + MenuCard.CARD_PADDING
