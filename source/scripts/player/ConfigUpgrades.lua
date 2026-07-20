@@ -24,6 +24,7 @@
 ---@field maxValue? number clamps the result
 ---@field format fun(v: number): string
 ---@field available? fun(): boolean if present, only offered by UpgradeSelectScene's pickUpgrades when this returns true (e.g. a prerequisite upgrade already installed); omitted means always offered. UpgradeTestScene deliberately ignores this -- see its header comment.
+---@field descriptionFor? fun(current: number): string if present, used instead of the static `description` to render text specific to the current Config[configKey] value (e.g. "Autofire Cannon" reads differently once a cannon is already mounted) -- see Config.upgradeDescription.
 
 ---@type Config.Upgrade[]
 Config.UPGRADES = {
@@ -72,10 +73,19 @@ Config.UPGRADES = {
 		id = "autofire_cannon",
 		title = "Autofire Cannon",
 		description = "Mounts a cannon that fires on its own at the nearest enemy in range.",
+		descriptionFor = function(current)
+			if current <= 0 then
+				return "Mounts a cannon that fires on its own at the nearest enemy in range."
+			end
+			return "Adds another autofire cannon -- fires an extra shot at the nearest enemy every volley."
+		end,
 		configKey = "AUTOFIRE_CANNON_UNLOCKED",
 		delta = 1,
 		maxValue = 5,
-		format = function(v) return v > 0 and "Installed" or "Not installed" end,
+		format = function(v)
+			local count = math.floor(v)
+			return count > 0 and (count .. (count == 1 and " cannon" or " cannons")) or "Not installed"
+		end,
 	},
 	{
 		id = "autofire_cannon_delay",
@@ -145,6 +155,35 @@ function Config.applyUpgrade(upgrade)
 	if upgrade.maxValue and new > upgrade.maxValue then new = upgrade.maxValue end
 	Config[upgrade.configKey] = new
 	return old, new
+end
+
+-- Resolves the description to show for `upgrade` given the current value at
+-- Config[upgrade.configKey] -- most upgrades have a fixed description, but
+-- ones with a `descriptionFor` (e.g. "Autofire Cannon", which reads
+-- differently once a cannon is already mounted) render text specific to
+-- that value instead.
+---@param upgrade Config.Upgrade
+---@return string
+function Config.upgradeDescription(upgrade)
+	if upgrade.descriptionFor then
+		return upgrade.descriptionFor(Config[upgrade.configKey])
+	end
+	return upgrade.description
+end
+
+-- Maps a list of Config.Upgrade entries to the { title, description } shape
+-- MenuCard.build expects, resolving each entry's description via
+-- Config.upgradeDescription. UpgradeSelectScene and UpgradeTestScene call
+-- this instead of passing Config.Upgrade entries to MenuCard directly, so a
+-- dynamic descriptionFor is reflected on screen.
+---@param upgrades Config.Upgrade[]
+---@return { title: string, description: string }[]
+function Config.upgradeMenuItems(upgrades)
+	local items = {}
+	for i, upgrade in ipairs(upgrades) do
+		items[i] = { title = upgrade.title, description = Config.upgradeDescription(upgrade) }
+	end
+	return items
 end
 
 return Config

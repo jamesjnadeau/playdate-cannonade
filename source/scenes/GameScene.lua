@@ -328,7 +328,10 @@ end
 -- (Config.AUTOFIRE_CANNON_UNLOCKED); once unlocked, fires unassisted at the
 -- nearest enemy within Config.AUTOFIRE_CANNON_RANGE every
 -- Config.AUTOFIRE_CANNON_DELAY seconds -- no charge, no player input, no
--- side restriction (unlike the manual port/starboard trident).
+-- side restriction (unlike the manual port/starboard trident). Each pick of
+-- the "Autofire Cannon" upgrade beyond the first mounts another cannon
+-- (Config.AUTOFIRE_CANNON_UNLOCKED counts them), so a volley fires that many
+-- shots at once, all at the same target.
 ---@param dt number
 function GameScene:updateCannon(dt)
 	if Config.AUTOFIRE_CANNON_UNLOCKED <= 0 then return end
@@ -338,7 +341,9 @@ function GameScene:updateCannon(dt)
 	end
 	local target = self:pickTarget(nil, Config.AUTOFIRE_CANNON_RANGE)
 	if not target then return end
-	self:fireCannon(target)
+	for _ = 1, Config.AUTOFIRE_CANNON_UNLOCKED do
+		self:fireCannon(target)
+	end
 	self.cannonTimer = Config.AUTOFIRE_CANNON_DELAY
 end
 

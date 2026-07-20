@@ -52,7 +52,7 @@ function UpgradeTestScene:finish()
 end
 
 function UpgradeTestScene:rebuild()
-	self.layout = MenuCard.build("Test Upgrade", "Ⓐ apply   Ⓑ cancel", Config.UPGRADES, self.selected)
+	self.layout = MenuCard.build("Test Upgrade", "Ⓐ apply   Ⓑ cancel", Config.upgradeMenuItems(Config.UPGRADES), self.selected)
 end
 
 ---@param delta integer

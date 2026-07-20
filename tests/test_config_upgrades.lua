@@ -79,6 +79,34 @@ function TestConfigUpgrades:testGatedUpgradesRequirePrerequisiteInstalled()
 	end
 end
 
+-- "Autofire Cannon" is the one upgrade with a `descriptionFor` -- its text
+-- should switch from the first-install description to a "mounts another"
+-- one once AUTOFIRE_CANNON_UNLOCKED is already > 0, and Config.upgradeDescription/
+-- Config.upgradeMenuItems (what UpgradeSelectScene/UpgradeTestScene actually
+-- call) should resolve that dynamically rather than returning the static
+-- `description` field.
+function TestConfigUpgrades:testAutofireCannonDescriptionChangesOnceInstalled()
+	local upgrade = nil
+	for _, u in ipairs(Config.UPGRADES) do
+		if u.id == "autofire_cannon" then upgrade = u end
+	end
+	lu.assertNotNil(upgrade, "missing upgrade autofire_cannon")
+	lu.assertNotNil(upgrade.descriptionFor)
+
+	Config.AUTOFIRE_CANNON_UNLOCKED = 0
+	local firstInstall = Config.upgradeDescription(upgrade)
+	lu.assertEquals(firstInstall, upgrade.description)
+
+	Config.AUTOFIRE_CANNON_UNLOCKED = 1
+	local repeatPick = Config.upgradeDescription(upgrade)
+	lu.assertNotEquals(repeatPick, firstInstall)
+	lu.assertNotNil(string.find(repeatPick, "another"))
+
+	local items = Config.upgradeMenuItems({ upgrade })
+	lu.assertEquals(items[1].title, upgrade.title)
+	lu.assertEquals(items[1].description, repeatPick)
+end
+
 function TestConfigUpgrades:testUpgradePoolEntriesAreWellFormed()
 	lu.assertTrue(#Config.UPGRADES > 0)
 	for _, upgrade in ipairs(Config.UPGRADES) do

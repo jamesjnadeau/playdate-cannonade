@@ -124,7 +124,7 @@ end
 
 function UpgradeSelectScene:rebuild()
 	if self.phase == "select" then
-		self.layout = MenuCard.build("Choose an Upgrade", "Ⓐ select", self.upgrades, self.selected, MENU_FONT)
+		self.layout = MenuCard.build("Choose an Upgrade", "Ⓐ select", Config.upgradeMenuItems(self.upgrades), self.selected, MENU_FONT)
 	else
 		self.resultTree = buildResultTree(self.upgrade, self.oldValue, self.newValue)
 		self.resultImg = self.resultTree:draw()
