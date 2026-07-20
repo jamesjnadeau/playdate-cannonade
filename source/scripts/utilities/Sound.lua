@@ -57,3 +57,13 @@ local enemyHitSounds = SoundBank("assets/sounds/enemy/hit")
 function Sound.playEnemyHit()
 	enemyHitSounds:playRandom()
 end
+
+-- Lightning crack: a couple of recorded variations (see
+-- source/assets/sounds/lightning), picked at random by SoundBank.
+local lightningSounds = SoundBank("assets/sounds/lightning")
+
+-- Plays a random lightning-crack sound. Call right before the title screen
+-- menu card appears (see TitleScene:update).
+function Sound.playLightning()
+	lightningSounds:playRandom()
+end

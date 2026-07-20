@@ -3,12 +3,14 @@
 -- UI library, see libraries/playout.lua.
 
 import "scripts/utilities/Config"
+import "scripts/utilities/Sound"
 
 local gfx <const> = playdate.graphics
 
 ---@class TitleScene : NobleScene
 ---@field t number seconds elapsed, drives the blinking "Ⓐ to select" prompt
 ---@field selected integer index into MENU_ITEMS
+---@field lightningPlayed boolean set once Sound.playLightning has fired for this visit, so it plays exactly once right before the menu appears
 TitleScene = class("TitleScene").extends(NobleScene) or TitleScene
 
 local scene = nil
@@ -68,6 +70,7 @@ function TitleScene:init(...)
 	self.backgroundColor = gfx.kColorWhite
 	self.t = 0
 	self.selected = 2
+	self.lightningPlayed = false
 end
 
 function TitleScene:start()
@@ -120,8 +123,13 @@ function TitleScene:update()
 	heroImage:draw(0, 0)
 
 	-- Hidden entirely until TITLE_MENU_DELAY elapses (letting the splash art
-	-- sit alone for a beat), then just appears in place -- no rise/slide.
+	-- sit alone for a beat), then just appears in place -- no rise/slide. A
+	-- lightning crack plays once, the instant it appears.
 	if self.t < Config.TITLE_MENU_DELAY then return end
+	if not self.lightningPlayed then
+		Sound.playLightning()
+		self.lightningPlayed = true
+	end
 
 	local x = (Config.SCREEN_W - img.width) / 2
 	local y = (Config.SCREEN_H - img.height) / 2
