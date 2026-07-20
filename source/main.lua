@@ -72,7 +72,7 @@ local sceneByName = {
 	DemoOver = DemoOverScene,
 }
 
-local startSceneName = playdate.argv[1] or Config.START_SCENE
+local startSceneName = playdate.argv[2] or Config.START_SCENE
 local StartScene = sceneByName[startSceneName]
 if not StartScene then
 	print("Config.START_SCENE/MERMAID_START_SCENE: unknown scene '" .. tostring(startSceneName) .. "', falling back to Title")
