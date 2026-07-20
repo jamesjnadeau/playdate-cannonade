@@ -58,6 +58,26 @@ function Sound.playEnemyHit()
 	enemyHitSounds:playRandom()
 end
 
+-- Player taking damage: a recorded hurt variation (see
+-- source/assets/sounds/player/hurt), picked at random by SoundBank.
+local playerHurtSounds = SoundBank("assets/sounds/player/hurt")
+
+-- Plays a random player-hurt sound. Call whenever the player's ship takes
+-- damage (see GameScene's ramming/enemy-collision handling).
+function Sound.playPlayerHurt()
+	playerHurtSounds:playRandom()
+end
+
+-- Player dying: a recorded variation (see source/assets/sounds/player/loose),
+-- picked at random by SoundBank.
+local playerDeathSounds = SoundBank("assets/sounds/player/loose")
+
+-- Plays a random player-death sound. Call once when the player's ship health
+-- drops to 0 (see GameScene's ramming/enemy-collision handling).
+function Sound.playPlayerDeath()
+	playerDeathSounds:playRandom()
+end
+
 -- Lightning crack: a couple of recorded variations (see
 -- source/assets/sounds/lightning), picked at random by SoundBank.
 local lightningSounds = SoundBank("assets/sounds/lightning")

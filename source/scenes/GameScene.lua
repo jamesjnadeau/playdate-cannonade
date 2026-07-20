@@ -566,8 +566,12 @@ function GameScene:tickGame()
 	for _, e in ipairs(self.enemies) do
 		e:update(ship.x, ship.y, self.windDirection, self.windSpeed)
 		if Utils.dist(e.x, e.y, ship.x, ship.y) < (Config.SHIP_COLLIDE_RADIUS + e.radius) then
-			if ship:hit(e.damage) and ship.health <= 0 then
-				self.gameOver = true
+			if ship:hit(e.damage) then
+				Sound.playPlayerHurt()
+				if ship.health <= 0 then
+					self.gameOver = true
+					Sound.playPlayerDeath()
+				end
 			end
 		end
 	end
