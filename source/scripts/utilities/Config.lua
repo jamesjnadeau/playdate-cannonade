@@ -248,7 +248,7 @@ Config.SOUND_SFX_VOLUME = 0.7 -- 0-1, applied to every SoundBank on load
 -- get kept in sync between main.lua's boot logic, the system-menu "Music"
 -- checkmark, and SettingsScene's Sound section.
 Config.MUSIC_ENABLED = true   -- master on/off for background music playback
-Config.MUSIC_SONG = nil       -- song name (a subdirectory of MusicPlayer.SONGS_DIR), or nil for no song selected
+Config.MUSIC_SONG = nil       -- song name (a file under MusicPlayer.SONGS_DIR), or nil for no song selected
 Config.MUSIC_VOLUME = 0.6     -- 0-1, master volume. Changing this at runtime needs a MusicPlayer.applyVolume() call to take effect immediately.
 
 ---------

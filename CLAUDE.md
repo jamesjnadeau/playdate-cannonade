@@ -119,21 +119,23 @@ That's 3 of 3 — no headroom left. Adding a fourth anywhere requires first
 either removing one of these three or moving it to an in-scene playout menu
 instead (see the pattern note above).
 
-## Splitting a rendered song: split the raw PCM, not the encoded ADPCM
+## Rendered songs are one file each, looped natively
 
-`tools/render-song.sh` renders a `.mid` to audio (fluidsynth), then splits
-it into pieces for `source/scripts/utilities/MusicPlayer.lua` (see that file's header
-for why: mainly so no single piece is large and pieces can be re-rendered
-independently — `playdate.sound.fileplayer:load()` itself doesn't actually
-read from disk until `play()`/`setBufferSize()` is called, so opening even a
-large file is already cheap). ADPCM is a delta-encoded, stateful format —
-each sample is predicted from the last — so cutting an already-ADPCM-encoded
-file at an arbitrary byte offset leaves the second piece's predictor
-mismatched with what it should have inherited, producing an audible click at
-every piece boundary. `render-song.sh` avoids this by splitting fluidsynth's
-raw PCM output first (`ffmpeg -f segment -c copy`, lossless, no predictor
-state involved) and only then ADPCM-encoding each piece on its own, so every
-piece's predictor starts fresh at silence instead of some mid-song value.
+`tools/render-song.sh` renders a `.mid` to a single ADPCM `.wav` per song
+for `source/scripts/utilities/MusicPlayer.lua`, which loops it via
+`fileplayer:play(0)` (repeatCount 0 = loop forever). An earlier version
+split each song into ~1-minute pieces and chained them with
+`setFinishCallback`, reasoning that `playdate.sound.fileplayer` should only
+have to open a small first piece — but `fileplayer:load()` doesn't actually
+read from disk until `play()`/`setBufferSize()` is called, so a full-length
+file is already cheap to open, and reloading a new piece at every boundary
+produced an audible stutter (playback briefly stopping) that got more
+jarring than the load cost it was avoiding. Single-file + native looping
+has neither problem. (If songs are ever split again, split fluidsynth's raw
+PCM output before ADPCM-encoding each piece, not an already-encoded
+stream — ADPCM is delta-encoded/stateful, so cutting it at an arbitrary
+byte offset leaves the next piece's predictor mismatched with what it
+should have inherited, producing a click at the seam.)
 
 ## Sampled sound effects: SoundBank
 
@@ -277,19 +279,19 @@ so a stale diagram and a stale test tend to go stale together — update both.
   file or config section already exists. Prints the remaining manual wiring
   steps afterward (import in `main.lua`, add to `GameScene.enemyTypes`, tune
   the generated config block).
-- **`render-song.sh [--piano | --program N] [--seconds N] <input.mid> [output-dir]`**
-  — renders a `.mid` to a directory of ADPCM `.wav` pieces (fluidsynth +
-  ffmpeg) for `source/scripts/utilities/MusicPlayer.lua` to play via
-  `playdate.sound.fileplayer`; splits the pre-ADPCM raw render into
-  `--seconds`-long pieces (default 60) before encoding each independently —
-  see the ADPCM-splitting gotcha above for why. Requires `fluidsynth`/`ffmpeg`
-  on `PATH` and a General MIDI soundfont (`SOUNDFONT` env var, defaults to
-  Debian's `fluid-soundfont-gm` package); `--piano`/`--program` also need
-  `python3` (drives `tools/midi_force_program.py`, which rewrites every
-  track's GM program number in the `.mid` in place). Output is committed
-  straight to `source/assets/songs/<song name>/` (~20MB for the bundled
-  Mozart movement) rather than gitignored/regenerated in CI — rerun the
-  script by hand if the source `.mid` changes.
+- **`render-song.sh [--piano | --program N] <input.mid> [output.wav]`** —
+  renders a `.mid` to a single ADPCM `.wav` (fluidsynth + ffmpeg) for
+  `source/scripts/utilities/MusicPlayer.lua` to play via
+  `playdate.sound.fileplayer`, looped natively — see "Rendered songs are one
+  file each, looped natively" above for why it's one file rather than
+  split pieces. Requires `fluidsynth`/`ffmpeg` on `PATH` and a General MIDI
+  soundfont (`SOUNDFONT` env var, defaults to Debian's `fluid-soundfont-gm`
+  package); `--piano`/`--program` also need `python3` (drives
+  `tools/midi_force_program.py`, which rewrites every track's GM program
+  number in the `.mid` in place). Output is committed straight to
+  `source/assets/songs/<song name>.wav` (~20MB for the bundled Mozart
+  movement) rather than gitignored/regenerated in CI — rerun the script by
+  hand if the source `.mid` changes.
 - **`render-sfx.sh <input-dir> [output-dir]`** — converts a directory tree of
   source sound effects (any format `ffmpeg` reads, e.g. `art-src/sounds/**/*.mp3`)
   into mono, 44.1kHz ADPCM `.wav` files under `source/assets/sounds/`, one

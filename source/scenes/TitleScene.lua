@@ -8,9 +8,10 @@ import "scripts/utilities/Sound"
 local gfx <const> = playdate.graphics
 
 ---@class TitleScene : NobleScene
----@field t number seconds elapsed, drives the blinking "Ⓐ to select" prompt
+---@field t number seconds elapsed, drives the TITLE_MENU_DELAY/lightning timing
 ---@field selected integer index into MENU_ITEMS
 ---@field lightningPlayed boolean set once Sound.playLightning has fired for this visit, so it plays exactly once right before the menu appears
+---@field menuImg _Image drawn image of the menu card for the current selection, see rebuildMenu()
 TitleScene = class("TitleScene").extends(NobleScene) or TitleScene
 
 local scene = nil
