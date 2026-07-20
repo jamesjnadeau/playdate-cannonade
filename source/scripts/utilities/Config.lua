@@ -329,11 +329,10 @@ Config.DEMO_MAX_LEVEL = 5 -- levels GameSceneDemo plays through before DemoOverS
 ------------------
 -- Title screen --
 ------------------
--- The menu card stays hidden below the screen for TITLE_MENU_DELAY seconds
--- (letting the splash art sit alone for a beat), then rises into place over
--- TITLE_MENU_RISE_DURATION seconds -- see TitleScene:update.
-Config.TITLE_MENU_DELAY = 3          -- seconds before the menu starts rising in
-Config.TITLE_MENU_RISE_DURATION = 1.5  -- seconds for the rise-in animation
+-- The menu card stays hidden for TITLE_MENU_DELAY seconds (letting the
+-- splash art sit alone for a beat), then appears in place -- see
+-- TitleScene:update.
+Config.TITLE_MENU_DELAY = 3          -- seconds before the menu appears
 
 ------------------------
 -- Instructions screen --
