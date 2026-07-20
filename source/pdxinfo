@@ -4,3 +4,4 @@ description=A top-down pirate sailing game. Crank to steer, dpad to sail and fir
 bundleID=com.jaemsjnadeau.mermaidmadness
 version=0.1
 buildNumber=1
+imagePath=assets/launcher
