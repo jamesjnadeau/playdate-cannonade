@@ -104,9 +104,9 @@ function StormCloud:draw()
 		gfx.setImageDrawMode(gfx.kDrawModeFillWhite)
 	elseif self.flashPhase == "black" then
 		gfx.setImageDrawMode(gfx.kDrawModeFillBlack)
-	end
-	cloudImage:drawScaled(self.x - w * 0.5, self.y - h * 0.5, w / cloudImageWidth, h / cloudImageHeight)
-	if self.flashPhase ~= nil then
+	else
 		gfx.setImageDrawMode(gfx.kDrawModeCopy)
 	end
+	cloudImage:drawScaled(self.x - w * 0.5, self.y - h * 0.5, w / cloudImageWidth, h / cloudImageHeight)
+	gfx.setImageDrawMode(gfx.kDrawModeCopy)
 end
