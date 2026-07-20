@@ -3,10 +3,13 @@
 -- (source/scripts/ConfigUpgrades.lua): drifts toward whichever enemy is
 -- currently nearest and, on a fixed interval, damages every enemy within
 -- Config.STORM_CLOUD_RADIUS -- not just the one it's drifting toward, so a
--- second enemy that wanders into range still takes damage. Unlike
--- Tridentball it never expires and isn't fired -- GameScene creates and
--- keeps one per stack of the upgrade (Config.STORM_CLOUD_COUNT) and owns the
--- actual damage application (see GameScene:updateStormClouds), the same
+-- second enemy that wanders into range still takes damage. With no enemy
+-- around, it follows the player instead, until close enough to wander
+-- randomly (see the "Idle behavior" comment in Config.lua and
+-- StormCloud:update) -- an enemy appearing always takes priority over both.
+-- Unlike Tridentball it never expires and isn't fired -- GameScene creates
+-- and keeps one per stack of the upgrade (Config.STORM_CLOUD_COUNT) and owns
+-- the actual damage application (see GameScene:updateStormClouds), the same
 -- split as Tridentball/the trident collision loop.
 
 import "scripts/Config"
@@ -31,12 +34,22 @@ local function nextFlashInterval()
 		+ math.random() * (Config.STORM_CLOUD_FLASH_MAX_INTERVAL - Config.STORM_CLOUD_FLASH_MIN_INTERVAL)
 end
 
+-- Random gap before an idle, in-range cloud picks a new wander heading, see
+-- the "Idle behavior" comment in Config.lua and StormCloud:update.
+---@return number
+local function nextWanderInterval()
+	return Config.STORM_CLOUD_WANDER_MIN_INTERVAL
+		+ math.random() * (Config.STORM_CLOUD_WANDER_MAX_INTERVAL - Config.STORM_CLOUD_WANDER_MIN_INTERVAL)
+end
+
 ---@class StormCloud : _Object
 ---@field x number
 ---@field y number
 ---@field damageTimer number seconds until this cloud's next damage tick, see GameScene:updateStormClouds
 ---@field flashPhase "white" | "black" | nil current step of a lightning strike; nil when showing the default image
 ---@field phaseTimer number seconds remaining in flashPhase, or seconds until the next strike when flashPhase is nil
+---@field wanderAngle number heading (degrees) used while idling within STORM_CLOUD_FOLLOW_DISTANCE of the player
+---@field wanderTimer number seconds until wanderAngle is re-rolled
 StormCloud = class("StormCloud").extends() or StormCloud
 
 ---@param x number
@@ -48,16 +61,25 @@ function StormCloud:init(x, y)
 	self.damageTimer = Config.STORM_CLOUD_DAMAGE_INTERVAL
 	self.flashPhase = nil
 	self.phaseTimer = nextFlashInterval()
+	self.wanderAngle = math.random() * 360
+	self.wanderTimer = nextWanderInterval()
 end
 
--- Drifts toward the nearest entry in `enemies` at Config.STORM_CLOUD_SPEED;
--- idles in place if `enemies` is empty. Also counts down damageTimer --
--- GameScene checks/resets it and applies the actual damage once it elapses
--- (see updateStormClouds), the same split of duties as Tridentball's
--- self.life/self.dead and GameScene's tridentball collision loop.
+-- Moves at Config.STORM_CLOUD_SPEED, picking a direction by priority: the
+-- nearest enemy always wins if one exists; otherwise the player, until
+-- within Config.STORM_CLOUD_FOLLOW_DISTANCE, at which point the cloud
+-- wanders in a random heading (re-rolled every STORM_CLOUD_WANDER_MIN/MAX_INTERVAL
+-- seconds) instead of just sitting still -- drifting back out past
+-- FOLLOW_DISTANCE while wandering resumes following. Also counts down
+-- damageTimer -- GameScene checks/resets it and applies the actual damage
+-- once it elapses (see updateStormClouds), the same split of duties as
+-- Tridentball's self.life/self.dead and GameScene's tridentball collision
+-- loop.
 ---@param enemies Enemy[]
+---@param playerX number
+---@param playerY number
 ---@param dt number
-function StormCloud:update(enemies, dt)
+function StormCloud:update(enemies, playerX, playerY, dt)
 	local best, bestD2 = nil, math.huge
 	for _, e in ipairs(enemies) do
 		local dx, dy = e.x - self.x, e.y - self.y
@@ -67,12 +89,24 @@ function StormCloud:update(enemies, dt)
 			best = e
 		end
 	end
+
+	local dir
 	if best then
-		local dir = Utils.angleTo(self.x, self.y, best.x, best.y)
-		local hx, hy = Utils.heading(dir)
-		self.x = self.x + hx * Config.STORM_CLOUD_SPEED * dt
-		self.y = self.y + hy * Config.STORM_CLOUD_SPEED * dt
+		dir = Utils.angleTo(self.x, self.y, best.x, best.y)
+	elseif Utils.dist(self.x, self.y, playerX, playerY) > Config.STORM_CLOUD_FOLLOW_DISTANCE then
+		dir = Utils.angleTo(self.x, self.y, playerX, playerY)
+	else
+		self.wanderTimer = self.wanderTimer - dt
+		if self.wanderTimer <= 0 then
+			self.wanderAngle = math.random() * 360
+			self.wanderTimer = nextWanderInterval()
+		end
+		dir = self.wanderAngle
 	end
+	local hx, hy = Utils.heading(dir)
+	self.x = self.x + hx * Config.STORM_CLOUD_SPEED * dt
+	self.y = self.y + hy * Config.STORM_CLOUD_SPEED * dt
+
 	self.damageTimer = self.damageTimer - dt
 
 	self.phaseTimer = self.phaseTimer - dt

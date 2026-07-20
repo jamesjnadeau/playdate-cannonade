@@ -176,14 +176,26 @@ Config.AUTOFIRE_CANNON_DELAY_STEP = 0.2
 -- of the upgrade adds one more independent cloud (see
 -- GameScene:updateStormClouds and source/scripts/StormCloud.lua). The drawn
 -- size (STORM_CLOUD_WIDTH/HEIGHT) is independent of STORM_CLOUD_RADIUS,
--- which only ever drives the damage check.
+-- which only ever drives the damage check. With no enemy around, a cloud
+-- instead follows the player until within STORM_CLOUD_FOLLOW_DISTANCE, then
+-- wanders randomly (see the "Idle behavior" comment below) -- an enemy
+-- appearing always preempts both.
 Config.STORM_CLOUD_COUNT    = 0    -- number of clouds currently owned; set by the upgrade
-Config.STORM_CLOUD_SPEED    = 20   -- px/s drift speed toward the nearest enemy
+Config.STORM_CLOUD_SPEED    = 20   -- px/s drift speed, whether tracking an enemy/player or wandering
 Config.STORM_CLOUD_DAMAGE   = 1    -- health removed from every enemy in range, per damage tick
 Config.STORM_CLOUD_DAMAGE_INTERVAL = 1 -- seconds between damage ticks
 Config.STORM_CLOUD_RADIUS   = 40   -- px; damage-application radius, independent of the drawn image size below
 Config.STORM_CLOUD_WIDTH    = 80   -- px; drawn width of the cloud image (source/assets/images/storm-cloud.png)
 Config.STORM_CLOUD_HEIGHT   = 44   -- px; drawn height of the cloud image
+
+-- Idle behavior (no enemy in play): follow the player until within
+-- FOLLOW_DISTANCE, then wander in a random heading, picking a new one every
+-- WANDER_MIN/MAX_INTERVAL seconds; drifting back out past FOLLOW_DISTANCE
+-- while wandering resumes following. An enemy appearing always overrides
+-- this, see StormCloud:update.
+Config.STORM_CLOUD_FOLLOW_DISTANCE = 60 -- px; leash radius around the player for the follow/wander switch
+Config.STORM_CLOUD_WANDER_MIN_INTERVAL = 1 -- seconds; shortest time before picking a new wander heading
+Config.STORM_CLOUD_WANDER_MAX_INTERVAL = 3 -- seconds; longest time before picking a new wander heading
 
 -- Lightning flash: between strikes the cloud draws as its normal image; a
 -- strike briefly flashes it to solid white, then solid black, then back to

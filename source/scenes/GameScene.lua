@@ -374,7 +374,7 @@ function GameScene:updateStormClouds(dt)
 	end
 
 	for _, cloud in ipairs(self.stormClouds) do
-		cloud:update(self.enemies, dt)
+		cloud:update(self.enemies, self.ship.x, self.ship.y, dt)
 		if cloud.damageTimer <= 0 then
 			cloud.damageTimer = Config.STORM_CLOUD_DAMAGE_INTERVAL
 			for i = #self.enemies, 1, -1 do
