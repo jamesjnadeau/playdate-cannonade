@@ -174,13 +174,16 @@ Config.AUTOFIRE_CANNON_DELAY_STEP = 0.2
 -- hazard that drifts toward whichever enemy is nearest and damages every
 -- enemy within STORM_CLOUD_RADIUS on a fixed interval. Stacks -- each pick
 -- of the upgrade adds one more independent cloud (see
--- GameScene:updateStormClouds and source/scripts/StormCloud.lua).
+-- GameScene:updateStormClouds and source/scripts/StormCloud.lua). The drawn
+-- size (STORM_CLOUD_WIDTH/HEIGHT) is independent of STORM_CLOUD_RADIUS,
+-- which only ever drives the damage check.
 Config.STORM_CLOUD_COUNT    = 0    -- number of clouds currently owned; set by the upgrade
 Config.STORM_CLOUD_SPEED    = 20   -- px/s drift speed toward the nearest enemy
 Config.STORM_CLOUD_DAMAGE   = 1    -- health removed from every enemy in range, per damage tick
 Config.STORM_CLOUD_DAMAGE_INTERVAL = 1 -- seconds between damage ticks
-Config.STORM_CLOUD_RADIUS   = 40   -- px; both the drawn size and the damage-application radius
-Config.STORM_CLOUD_LINE_WIDTH = 2  -- stroke thickness (px) of the cloud glyph
+Config.STORM_CLOUD_RADIUS   = 40   -- px; damage-application radius, independent of the drawn image size below
+Config.STORM_CLOUD_WIDTH    = 80   -- px; drawn width of the cloud image (source/assets/images/storm-cloud.png)
+Config.STORM_CLOUD_HEIGHT   = 44   -- px; drawn height of the cloud image
 
 -----------
 -- Sound --

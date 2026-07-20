@@ -14,6 +14,12 @@ import "scripts/Utils"
 
 local gfx <const> = playdate.graphics
 
+-- Cloud artwork, drawn at Config.STORM_CLOUD_WIDTH x STORM_CLOUD_HEIGHT (see
+-- StormCloud:draw) rather than at this file's native size -- see
+-- art-src/cloud.png for the hi-res original.
+local cloudImage = gfx.image.new("assets/images/storm-cloud")
+local cloudImageWidth, cloudImageHeight = cloudImage:getSize()
+
 ---@class StormCloud : _Object
 ---@field x number
 ---@field y number
@@ -55,20 +61,11 @@ function StormCloud:update(enemies, dt)
 	self.damageTimer = self.damageTimer - dt
 end
 
--- Drawn as three overlapping circle outlines (a wide flat-bottomed puff)
--- plus a small zigzag bolt underneath, so it reads as a storm cloud rather
--- than a plain circle on the 1-bit display.
+-- Drawn from cloudImage, scaled to Config.STORM_CLOUD_WIDTH x
+-- STORM_CLOUD_HEIGHT and centered on (self.x, self.y). Width/height scale
+-- independently (drawScaled's separate x/y scale factors), so the two config
+-- values don't need to share the source art's aspect ratio.
 function StormCloud:draw()
-	local r = Config.STORM_CLOUD_RADIUS
-	gfx.setColor(gfx.kColorBlack)
-	gfx.setLineWidth(Config.STORM_CLOUD_LINE_WIDTH)
-	gfx.drawCircleAtPoint(self.x - r * 0.5, self.y, r * 0.55)
-	gfx.drawCircleAtPoint(self.x + r * 0.5, self.y, r * 0.55)
-	gfx.drawCircleAtPoint(self.x, self.y - r * 0.15, r * 0.7)
-
-	local bx, by = self.x, self.y + r * 0.35
-	gfx.drawLine(bx - 3, by, bx + 3, by + r * 0.25)
-	gfx.drawLine(bx + 3, by + r * 0.25, bx - 2, by + r * 0.25)
-	gfx.drawLine(bx - 2, by + r * 0.25, bx + 4, by + r * 0.55)
-	gfx.setLineWidth(1)
+	local w, h = Config.STORM_CLOUD_WIDTH, Config.STORM_CLOUD_HEIGHT
+	cloudImage:drawScaled(self.x - w * 0.5, self.y - h * 0.5, w / cloudImageWidth, h / cloudImageHeight)
 end
