@@ -88,6 +88,15 @@ Config.UPGRADES = {
 		format = function(v) return string.format("%.2f", v) .. " s" end,
 	},
 	{
+		id = "trident_count",
+		title = "Twin Tridents",
+		description = "Fires an additional trident, fanned out from the aimed shot. Stacks up to a limit.",
+		configKey = "TRIDENT_COUNT",
+		delta = 1,
+		maxValue = Config.TRIDENT_COUNT_MAX,
+		format = function(v) return math.floor(v) .. (math.floor(v) == 1 and " trident" or " tridents") end,
+	},
+	{
 		id = "storm_cloud",
 		title = "Storm Cloud",
 		description = "Summons a storm cloud that drifts toward enemies, damaging any it passes over. Stacks -- each pick adds another cloud.",

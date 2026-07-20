@@ -293,10 +293,16 @@ function GameScene:releaseCharge(side)
 		-- so an undercharged shot can still stray wide of the target.
 		dir = Utils.wrapDeg(dir + (math.random() * 2 - 1) * self:currentAimSpread())
 		local speed = Config.TRIDENT_SPEED
-		local hx, hy = Utils.heading(dir)
-		local bx = ship.x + hx * (Config.SHIP_LENGTH + 4)
-		local by = ship.y + hy * (Config.SHIP_LENGTH + 4)
-		self.tridentballs[#self.tridentballs + 1] = Tridentball(bx, by, dir, speed)
+		local count = Config.TRIDENT_COUNT
+		for i = 1, count do
+			-- Fan extra tridents symmetrically around `dir` (e.g. count=2 fires
+			-- at -0.5*spread/+0.5*spread, count=3 at -spread/0/+spread).
+			local shotDir = Utils.wrapDeg(dir + (i - (count + 1) / 2) * Config.TRIDENT_COUNT_SPREAD)
+			local hx, hy = Utils.heading(shotDir)
+			local bx = ship.x + hx * (Config.SHIP_LENGTH + 4)
+			local by = ship.y + hy * (Config.SHIP_LENGTH + 4)
+			self.tridentballs[#self.tridentballs + 1] = Tridentball(bx, by, shotDir, speed)
+		end
 		Sound.playTridentWhoosh()
 	end
 
