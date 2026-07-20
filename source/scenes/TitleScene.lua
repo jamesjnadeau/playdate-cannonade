@@ -21,6 +21,9 @@ local scene = nil
 -- (and same threshold) as TuningScene.lua's CRANK_DEGREES_PER_ROW.
 local CRANK_DEGREES_PER_ITEM = 20
 
+-- Gap between the menu card and the bottom/left screen edges.
+local TITLE_MENU_MARGIN = 12
+
 -- Splash art, full-screen background behind the menu. Pre-dithered at
 -- 400x240 (see art-src/title-hero.png for the hi-res original) so pdc's
 -- 1-bit conversion happens at the resolution it's actually shown at.
@@ -31,6 +34,21 @@ local heroImage = gfx.image.new("assets/images/title-hero")
 -- long after every scene file has finished loading, so load order here
 -- doesn't matter.
 local MENU_ITEMS = { "Play", "Training", "Instructions", "Settings" }
+
+local MENU_PADDING = 20
+
+-- Fixed outer card width, wide enough for the widest item once decorated
+-- with "> <" (whichever item that ends up being selected). Without this,
+-- the card auto-sizes to its content and its width would shift every time
+-- selection moves onto or off of the widest item -- see buildTree() below.
+local MENU_CARD_WIDTH
+do
+	local widestLabel = 0
+	for _, label in ipairs(MENU_ITEMS) do
+		widestLabel = math.max(widestLabel, gfx.getTextSize("> " .. label .. " <"))
+	end
+	MENU_CARD_WIDTH = widestLabel + MENU_PADDING * 2
+end
 
 -- Only depends on `selected`, so it's rebuilt on demand (see rebuildMenu())
 -- rather than every :update() frame -- nothing about the card changes
@@ -46,8 +64,9 @@ local function buildTree(selected)
 
 	local root = playout.box.new({
 		direction = playout.kDirectionVertical,
-		spacing = 14,
-		padding = 20,
+		spacing = 20,
+		padding = MENU_PADDING,
+		width = MENU_CARD_WIDTH,
 		hAlign = playout.kAlignCenter,
 		-- Opaque card (rather than drawing straight over the art) so the menu
 		-- text stays legible regardless of what's dithered underneath it.
@@ -55,8 +74,7 @@ local function buildTree(selected)
 		border = 2,
 		borderRadius = 6,
 	}, {
-		playout.text.new("* Pestering Poseidon *", { alignment = kTextAlignment.center }),
-		-- playout.text.new("Zeus and Posiden use you to dual.", { alignment = kTextAlignment.center }),
+		--output menu
 		playout.box.new({ direction = playout.kDirectionVertical, spacing = 4 }, menuChildren),
 	})
 
@@ -153,7 +171,7 @@ function TitleScene:update()
 	end
 
 	local img = self.menuImg
-	local x = (Config.SCREEN_W - img.width) / 2
-	local y = (Config.SCREEN_H - img.height) / 2
+	local x = TITLE_MENU_MARGIN
+	local y = Config.SCREEN_H - img.height - TITLE_MENU_MARGIN
 	img:draw(x, y)
 end
