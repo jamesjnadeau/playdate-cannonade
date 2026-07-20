@@ -1,16 +1,20 @@
 -- UpgradeSelectScene.lua
 -- Reached from LevelCompleteScene after clearing a level. Offers 3 randomly
--- drawn entries from Config.UPGRADES (see ConfigUpgrades.lua) rendered with
--- the playout UI library (see libraries/playout.lua) -- the same
--- rebuild-on-change list pattern as EnemySelectScene/SettingsScene, plus a
--- description of the highlighted upgrade. Up/Down move the highlight, Ⓐ
--- applies the highlighted upgrade (via Config.applyUpgrade) and swaps to a
--- before/after summary; a second Ⓐ continues on to WindShiftScene or
--- straight back to self.gameScene (see GameSceneMain.gameSceneClass),
--- mirroring LevelCompleteScene's own transition logic.
+-- drawn entries from Config.UPGRADES (see ConfigUpgrades.lua). The "select"
+-- phase (list of titles + description of whichever is highlighted) is
+-- rendered via MenuCard (source/scripts/MenuCard.lua), the same
+-- list+description card layout UpgradeTestScene uses; the "result" phase
+-- (before/after summary once Ⓐ is pressed) is its own simple centered
+-- playout tree, since it has no list to lay out. Up/Down move the
+-- highlight, Ⓐ applies the highlighted upgrade (via Config.applyUpgrade)
+-- and swaps to the before/after summary; a second Ⓐ continues on to
+-- WindShiftScene or straight back to self.gameScene (see
+-- GameSceneMain.gameSceneClass), mirroring LevelCompleteScene's own
+-- transition logic.
 
 import "scripts/Config"
 import "scripts/ConfigUpgrades"
+import "scripts/MenuCard"
 
 local gfx <const> = playdate.graphics
 
@@ -30,8 +34,9 @@ local MENU_FONT = nil
 ---@field upgrades Config.Upgrade[] this round's 3 random picks
 ---@field selected integer index into self.upgrades
 ---@field phase string "select" | "result"
----@field tree table playout tree, see rebuild()
----@field img _Image drawn image of the playout tree, see rebuild()
+---@field layout MenuCard.Layout set once phase == "select", see rebuild()
+---@field resultTree table playout tree, set once phase == "result", see rebuild()
+---@field resultImg _Image drawn image of resultTree, set once phase == "result", see rebuild()
 ---@field upgrade Config.Upgrade set once phase == "result"
 ---@field oldValue number set once phase == "result"
 ---@field newValue number set once phase == "result"
@@ -58,46 +63,6 @@ local function pickUpgrades(count)
 		picks[#picks + 1] = table.remove(pool, idx)
 	end
 	return picks
-end
-
--- Selection screen: list of upgrade titles (highlighted row = black
--- background/white text, same as EnemySelectScene/SettingsScene) plus the
--- description of whichever one is currently highlighted.
----@param selectedIndex integer
----@param upgrades Config.Upgrade[]
----@return table playout tree
-local function buildSelectTree(selectedIndex, upgrades)
-	local children = {
-		playout.text.new("Choose an Upgrade"),
-	}
-	for i, upgrade in ipairs(upgrades) do
-		local isSelected = i == selectedIndex
-		children[#children + 1] = playout.box.new({
-			padding = 4,
-			hAlign = playout.kAlignStart,
-			backgroundColor = isSelected and gfx.kColorBlack or nil,
-		}, {
-			playout.text.new(upgrade.title, {
-				color = isSelected and gfx.kColorWhite or gfx.kColorBlack,
-			}),
-		})
-	end
-	children[#children + 1] = playout.text.new(upgrades[selectedIndex].description, {
-		alignment = kTextAlignment.center,
-	})
-	children[#children + 1] = playout.text.new("Ⓐ select")
-
-	local root = playout.box.new({
-		direction = playout.kDirectionVertical,
-		spacing = 8,
-		padding = 10,
-		hAlign = playout.kAlignCenter,
-		maxWidth = 340,
-		backgroundColor = gfx.kColorWhite,
-		font = MENU_FONT,
-	}, children)
-
-	return playout.tree.new(root)
 end
 
 -- Result screen: the chosen upgrade's title plus a before/after readout of
@@ -143,7 +108,7 @@ function UpgradeSelectScene:init(sceneProperties)
 
 	-- Built here rather than in :start() -- Noble may call :update() during
 	-- the tail of the transition in, before :start() fires (see GameScene's
-	-- init/start comments), so self.img must already exist by then.
+	-- init/start comments), so self.layout must already exist by then.
 	self:rebuild()
 end
 
@@ -159,11 +124,11 @@ end
 
 function UpgradeSelectScene:rebuild()
 	if self.phase == "select" then
-		self.tree = buildSelectTree(self.selected, self.upgrades)
+		self.layout = MenuCard.build("Choose an Upgrade", "Ⓐ select", self.upgrades, self.selected, MENU_FONT)
 	else
-		self.tree = buildResultTree(self.upgrade, self.oldValue, self.newValue)
+		self.resultTree = buildResultTree(self.upgrade, self.oldValue, self.newValue)
+		self.resultImg = self.resultTree:draw()
 	end
-	self.img = self.tree:draw()
 end
 
 ---@param delta integer
@@ -202,8 +167,12 @@ UpgradeSelectScene.inputHandler = {
 
 function UpgradeSelectScene:update()
 	UpgradeSelectScene.super.update(self)
-	gfx.setImageDrawMode(gfx.kDrawModeCopy)
-	local x = (Config.SCREEN_W - self.img.width) / 2
-	local y = (Config.SCREEN_H - self.img.height) / 2
-	self.img:draw(x, y)
+	if self.phase == "select" then
+		MenuCard.draw(self.layout)
+	else
+		gfx.setImageDrawMode(gfx.kDrawModeCopy)
+		local x = (Config.SCREEN_W - self.resultImg.width) / 2
+		local y = (Config.SCREEN_H - self.resultImg.height) / 2
+		self.resultImg:draw(x, y)
+	end
 end
