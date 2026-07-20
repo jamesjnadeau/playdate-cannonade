@@ -15,6 +15,29 @@ MenuCard = {}
 local gfx <const> = playdate.graphics
 local floor <const> = math.floor
 
+-- Draws a sine-wave polyline from y=y0 to y=y1 along vertical baseline x, so
+-- the divider reads as a little wave rather than a flat rule (matching the
+-- water's look -- see GameScene:drawWavelet and GameSceneTraining's
+-- drawWaveBar, which does the same thing horizontally). Static -- no phase
+-- parameter -- since the divider doesn't need to move.
+---@param x number
+---@param y0 number
+---@param y1 number
+local function drawWaveLine(x, y0, y1)
+	local amplitude = Config.WIND_BAR_WAVE_AMPLITUDE
+	local k = 2 * math.pi / Config.WIND_BAR_WAVE_WAVELENGTH
+	local segLen = 3
+	local prevX, prevY = x + amplitude * math.sin(0), y0
+	local y = y0
+	while y < y1 - 0.001 do
+		local ny = math.min(y + segLen, y1)
+		local nx = x + amplitude * math.sin(ny * k)
+		gfx.drawLine(prevX, prevY, nx, ny)
+		prevX, prevY = nx, ny
+		y = ny
+	end
+end
+
 MenuCard.CARD_MARGIN = 8
 MenuCard.CARD_BORDER = 0
 MenuCard.CARD_RADIUS = 6
@@ -141,7 +164,7 @@ function MenuCard.draw(layout)
 	local dividerX = menuX + menuWidth + MenuCard.DIVIDER_GAP / 2
 	gfx.setColor(gfx.kColorBlack)
 	gfx.setLineWidth(1)
-	gfx.drawLine(dividerX, middleY, dividerX, middleY + middleHeight)
+	drawWaveLine(dividerX, middleY, middleY + middleHeight)
 
 	local listY
 	if layout.listImg.height <= middleHeight then
