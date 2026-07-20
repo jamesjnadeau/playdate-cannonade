@@ -1,10 +1,10 @@
 -- Enemy.lua
 -- A hostile ship that steers toward the player and rams them.
 
-import "scripts/Config"
-import "scripts/ConfigEnemy"
-import "scripts/Utils"
-import "scripts/Ship"
+import "scripts/utilities/Config"
+import "scripts/enemies/ConfigEnemy"
+import "scripts/utilities/Utils"
+import "scripts/utilities/Ship"
 
 local gfx <const> = playdate.graphics
 

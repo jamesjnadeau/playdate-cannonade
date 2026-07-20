@@ -3,7 +3,7 @@
 # reads, e.g. art-src/sounds/**/*.mp3) into ADPCM .wav files under
 # source/assets/sounds/, one output file per input file, preserving the
 # input's subdirectory structure -- offline preprocessing for
-# source/scripts/SoundBank.lua, which plays back a folder's compiled sounds
+# source/scripts/utilities/SoundBank.lua, which plays back a folder's compiled sounds
 # at random (see that file's header). Mirrors render-song.sh's ADPCM encode
 # step but skips the MIDI-synthesis and piece-splitting stages: each sound
 # effect here is already a short, standalone clip, so it stays in one piece.

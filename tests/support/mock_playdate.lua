@@ -1,6 +1,6 @@
 -- mock_playdate.lua
 -- Minimal stand-ins for the Playdate/pdParticles globals that
--- source/scripts/Config.lua, ConfigUpgrades.lua and Utils.lua touch at load
+-- source/scripts/utilities/Config.lua, ConfigUpgrades.lua and Utils.lua touch at load
 -- time, so those pure-logic files can be dofile'd under a plain lua5.4
 -- interpreter instead of the Simulator.
 --
@@ -24,6 +24,6 @@ Particles = {
 	modes = { DECAY = "decay" },
 }
 
-dofile("source/scripts/Config.lua")
-dofile("source/scripts/ConfigUpgrades.lua")
-dofile("source/scripts/Utils.lua")
+dofile("source/scripts/utilities/Config.lua")
+dofile("source/scripts/player/ConfigUpgrades.lua")
+dofile("source/scripts/utilities/Utils.lua")

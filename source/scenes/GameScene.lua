@@ -5,16 +5,16 @@
 -- their own enemy-spawning policy and extra HUD text; see updateSpawning()
 -- and drawModeStatus() below. This class is never instantiated directly.
 
-import "scripts/Config"
-import "scripts/ConfigEnemy"
-import "scripts/Utils"
-import "scripts/Player"
-import "scripts/Enemy"
-import "scripts/EnemySwordfish"
-import "scripts/EnemyKraken"
-import "scripts/Tridentball"
-import "scripts/StormCloud"
-import "scripts/Sound"
+import "scripts/utilities/Config"
+import "scripts/enemies/ConfigEnemy"
+import "scripts/utilities/Utils"
+import "scripts/player/Player"
+import "scripts/enemies/Enemy"
+import "scripts/enemies/EnemySwordfish"
+import "scripts/enemies/EnemyKraken"
+import "scripts/player/Tridentball"
+import "scripts/player/StormCloud"
+import "scripts/utilities/Sound"
 
 local gfx <const> = playdate.graphics
 

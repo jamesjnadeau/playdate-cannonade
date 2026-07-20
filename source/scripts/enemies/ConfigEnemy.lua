@@ -1,7 +1,7 @@
 -- ConfigEnemy.lua
 -- Enemy tuning, split out of Config.lua since it's the part that grows as
 -- new enemy types are added. Still just adds fields onto the shared global
--- Config table -- import "scripts/Config" first (this file assumes
+-- Config table -- import "scripts/utilities/Config" first (this file assumes
 -- Config.SHIP_MAX_SPEED already exists).
 local gfx <const> = playdate.graphics
 

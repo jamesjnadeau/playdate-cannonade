@@ -4,10 +4,10 @@
 -- (see Config.lua) -- Enemy:update/draw already read from instance fields, so
 -- this subclass just points those fields at its own config values.
 
-import "scripts/Config"
-import "scripts/ConfigEnemy"
-import "scripts/Utils"
-import "scripts/Enemy"
+import "scripts/utilities/Config"
+import "scripts/enemies/ConfigEnemy"
+import "scripts/utilities/Utils"
+import "scripts/enemies/Enemy"
 
 ---@class EnemySwordfish : Enemy
 EnemySwordfish = class("EnemySwordfish").extends(Enemy) or EnemySwordfish

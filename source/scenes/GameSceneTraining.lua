@@ -3,7 +3,7 @@
 -- level progression. Press A to spawn one enemy, B to return to the title
 -- screen.
 
-import "scripts/Config"
+import "scripts/utilities/Config"
 import "scenes/GameScene"
 
 local gfx <const> = playdate.graphics

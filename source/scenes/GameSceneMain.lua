@@ -5,9 +5,9 @@
 -- GameSceneDemo (a level-capped build variant, see Config.DEMO_MODE)
 -- overrides to end the run instead once its cap is reached.
 
-import "scripts/Config"
-import "scripts/ConfigEnemy"
-import "scripts/Utils"
+import "scripts/utilities/Config"
+import "scripts/enemies/ConfigEnemy"
+import "scripts/utilities/Utils"
 import "scenes/GameScene"
 
 local gfx <const> = playdate.graphics

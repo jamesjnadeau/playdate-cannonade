@@ -1,5 +1,5 @@
 -- test_utils.lua
--- Covers the pure math helpers in source/scripts/Utils.lua. Loaded by
+-- Covers the pure math helpers in source/scripts/utilities/Utils.lua. Loaded by
 -- tests/run_all.lua, which dofiles tests/support/mock_playdate.lua first so
 -- the global `Utils` and luaunit's `lu` are already in place.
 

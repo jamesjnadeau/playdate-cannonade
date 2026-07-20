@@ -12,6 +12,27 @@ wants to run the Simulator with `MERMAID_START_SCENE` set to a scene that
 makes testing the change easy, e.g. `MERMAID_START_SCENE=GameMain bash
 tools/simulate.sh`.
 
+## `source/scripts/` layout
+
+`source/scripts/` is split into three subfolders by responsibility, rather
+than one flat directory:
+
+- **`player/`** — the player ship and anything it wields: `Player.lua`,
+  `ConfigUpgrades.lua`, `Tridentball.lua` (the fired projectile),
+  `StormCloud.lua` (the "Storm Cloud" upgrade's summoned hazard).
+- **`enemies/`** — enemy classes: `Enemy.lua` (base class) and its
+  subclasses (`EnemySwordfish.lua`, `EnemyKraken.lua`, `EnemyDummy.lua`),
+  plus `ConfigEnemy.lua`.
+- **`utilities/`** — everything shared or not specific to player/enemies:
+  `Config.lua`, `Utils.lua`, `Ship.lua` (base class for both `Player` and
+  `Enemy`), `MenuCard.lua`, `MusicPlayer.lua`, `Sound.lua`, `SoundBank.lua`.
+
+New enemy scripts go in `enemies/` — `tools/new-enemy.sh` already targets
+that folder. When adding a new script elsewhere, put it in whichever folder
+matches its subject (player-specific, enemy-specific, or shared/utility);
+update `import`/`dofile` paths throughout (`main.lua`, `source/scenes/*.lua`,
+`tests/support/*.lua`) to match wherever it lands.
+
 ## Build/run verification
 
 Don't try to locate or run the Playdate SDK compiler (`pdc`) or launch the
@@ -26,7 +47,7 @@ check pure-logic changes is expected, not just a direct-request exception.
 
 ## Type annotations (LuaCATS)
 
-`source/scripts/*.lua` and `source/scenes/*.lua` (not `source/libraries/` —
+`source/scripts/**/*.lua` and `source/scenes/*.lua` (not `source/libraries/` —
 that's vendored third-party code) carry
 [LuaCATS](https://luals.github.io/wiki/annotations/) doc comments so
 lua-language-server can type-check and autocomplete against the Playdate SDK.
@@ -101,7 +122,7 @@ instead (see the pattern note above).
 ## Splitting a rendered song: split the raw PCM, not the encoded ADPCM
 
 `tools/render-song.sh` renders a `.mid` to audio (fluidsynth), then splits
-it into pieces for `source/scripts/MusicPlayer.lua` (see that file's header
+it into pieces for `source/scripts/utilities/MusicPlayer.lua` (see that file's header
 for why: mainly so no single piece is large and pieces can be re-rendered
 independently — `playdate.sound.fileplayer:load()` itself doesn't actually
 read from disk until `play()`/`setBufferSize()` is called, so opening even a
@@ -116,7 +137,7 @@ piece's predictor starts fresh at silence instead of some mid-song value.
 
 ## Sampled sound effects: SoundBank
 
-`source/scripts/SoundBank.lua` plays a random sound from a folder of
+`source/scripts/utilities/SoundBank.lua` plays a random sound from a folder of
 pre-compiled audio, e.g. a handful of enemy-hit variations so repeated hits
 don't all sound identical (see `Sound.playEnemyHit`, called from
 `GameScene.lua`'s tridentball and StormCloud hit handling). It's a class
@@ -140,8 +161,8 @@ folder, run `tools/render-sfx.sh art-src/sounds/<group>`, then
 Plain-`lua5.4` unit tests — no Playdate SDK or Simulator involved. Two tiers:
 
 - Pure-logic files that don't use `class("X").extends(...)` at all
-  (`source/scripts/Utils.lua`, `Config.applyUpgrade` in
-  `source/scripts/ConfigUpgrades.lua`) — loaded under `support/mock_playdate.lua`,
+  (`source/scripts/utilities/Utils.lua`, `Config.applyUpgrade` in
+  `source/scripts/player/ConfigUpgrades.lua`) — loaded under `support/mock_playdate.lua`,
   a minimal `playdate`/`Particles` global stand-in.
 - The scene system (`source/scenes/*.lua`, real files, not copies) — loaded
   under `support/mock_noble.lua`, a from-scratch stand-in for the Playdate
@@ -174,7 +195,7 @@ transitions or pure logic still needs a human in the Simulator.
   `Noble.transition`/`Noble.Input`/`playdate.graphics`/`kTextAlignment`/
   `playout`/`playdate.getSystemMenu()`/`playdate.sound.fileplayer`, narrow
   like `mock_playdate.lua`: only what `source/scenes/*.lua` (and
-  `source/scripts/MusicPlayer.lua`, which `SettingsScene.lua` imports)
+  `source/scripts/utilities/MusicPlayer.lua`, which `SettingsScene.lua` imports)
   actually touch. `Noble.transition`
   collapses the real engine's animated multi-frame swap into one synchronous
   call (same exit/finish/enter/start order); `Noble.Input.fire(eventName, ...)`
@@ -219,7 +240,7 @@ so a stale diagram and a stale test tend to go stale together — update both.
   `build.sh`: the user runs this themselves. If `MERMAID_START_SCENE` is set
   in the environment, forwards it as a launch argument so `main.lua` can pick
   a non-default boot scene — see `Config.START_SCENE` in
-  `source/scripts/Config.lua` and the "Response Notes" section above.
+  `source/scripts/utilities/Config.lua` and the "Response Notes" section above.
 - **`fetch-deps.sh`** — pulls the two vendored dependencies into
   `source/libraries/` if they aren't already present: Noble Engine (git clone)
   and pdParticles + playout (curl'd single files). Idempotent — safe to
@@ -249,7 +270,7 @@ so a stale diagram and a stale test tend to go stale together — update both.
   isn't a substitute for that, just a cheaper first check.
 - **`new-enemy.sh <Name>`** — scaffolds a new `Enemy` subclass. Given a
   PascalCase or camelCase name (e.g. `Piranha`, `SeaSerpent`), it generates
-  `source/scripts/Enemy<Name>.lua` (modeled on `EnemySwordfish.lua`, with
+  `source/scripts/enemies/Enemy<Name>.lua` (modeled on `EnemySwordfish.lua`, with
   TODOs for a distinct hull/look) and appends a matching
   `Config.ENEMY_<SNAKE_CASE_NAME>_*` tuning block to `ConfigEnemy.lua`
   (defaults mirror the base `ENEMY_*` values). Refuses to run if the target
@@ -258,7 +279,7 @@ so a stale diagram and a stale test tend to go stale together — update both.
   the generated config block).
 - **`render-song.sh [--piano | --program N] [--seconds N] <input.mid> [output-dir]`**
   — renders a `.mid` to a directory of ADPCM `.wav` pieces (fluidsynth +
-  ffmpeg) for `source/scripts/MusicPlayer.lua` to play via
+  ffmpeg) for `source/scripts/utilities/MusicPlayer.lua` to play via
   `playdate.sound.fileplayer`; splits the pre-ADPCM raw render into
   `--seconds`-long pieces (default 60) before encoding each independently —
   see the ADPCM-splitting gotcha above for why. Requires `fluidsynth`/`ffmpeg`

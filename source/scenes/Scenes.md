@@ -327,7 +327,7 @@ without needing to know what it is — see `GameSceneMain.gameSceneClass`.
 ## UpgradeSelectScene
 
 Offers 3 randomly-drawn entries from `Config.UPGRADES`
-(`source/scripts/ConfigUpgrades.lua`) — entries with an `available` predicate
+(`source/scripts/player/ConfigUpgrades.lua`) — entries with an `available` predicate
 (e.g. "Rapid Autocannon", which requires the Autofire Cannon upgrade already
 installed) are excluded from the draw pool until it returns true; see
 `pickUpgrades` — rendered with

@@ -4,7 +4,7 @@
 -- GameSceneDemo:onLevelComplete, so only ever seen in a Config.DEMO_MODE
 -- build (see Config.lua/TitleScene's confirmSelection).
 
-import "scripts/Config"
+import "scripts/utilities/Config"
 
 local gfx <const> = playdate.graphics
 

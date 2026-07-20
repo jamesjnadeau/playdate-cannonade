@@ -1,5 +1,5 @@
 -- test_config_upgrades.lua
--- Covers Config.applyUpgrade (source/scripts/ConfigUpgrades.lua) -- the
+-- Covers Config.applyUpgrade (source/scripts/player/ConfigUpgrades.lua) -- the
 -- multiplier/delta/clamp math UpgradeSelectScene relies on to mutate Config
 -- and compute the before/after stat values it displays -- plus a sanity
 -- check that every entry in Config.UPGRADES is well-formed (catches typo'd

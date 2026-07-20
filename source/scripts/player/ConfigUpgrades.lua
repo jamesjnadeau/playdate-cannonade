@@ -1,7 +1,7 @@
 -- ConfigUpgrades.lua
 -- Upgrade pool offered by UpgradeSelectScene after each level clear, split
 -- out of Config.lua like ConfigEnemy.lua -- still just adds fields onto the
--- shared global Config table -- import "scripts/Config" first (this file
+-- shared global Config table -- import "scripts/utilities/Config" first (this file
 -- assumes Config.SHIP_ACCEL etc. already exist).
 
 ---------------

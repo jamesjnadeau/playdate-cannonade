@@ -6,9 +6,9 @@
 -- versions instead of filling a self.hull polygon). All tuning lives in
 -- Config.ENEMY_KRAKEN_* (see ConfigEnemy.lua).
 
-import "scripts/Config"
-import "scripts/ConfigEnemy"
-import "scripts/Enemy"
+import "scripts/utilities/Config"
+import "scripts/enemies/ConfigEnemy"
+import "scripts/enemies/Enemy"
 
 local gfx <const> = playdate.graphics
 

@@ -174,7 +174,7 @@ Config.AUTOFIRE_CANNON_DELAY_STEP = 0.2
 -- hazard that drifts toward whichever enemy is nearest and damages every
 -- enemy within STORM_CLOUD_RADIUS on a fixed interval. Stacks -- each pick
 -- of the upgrade adds one more independent cloud (see
--- GameScene:updateStormClouds and source/scripts/StormCloud.lua). The drawn
+-- GameScene:updateStormClouds and source/scripts/player/StormCloud.lua). The drawn
 -- size (STORM_CLOUD_WIDTH/HEIGHT) is independent of STORM_CLOUD_RADIUS,
 -- which only ever drives the damage check. With no enemy around, a cloud
 -- instead follows the player until within STORM_CLOUD_FOLLOW_DISTANCE, then

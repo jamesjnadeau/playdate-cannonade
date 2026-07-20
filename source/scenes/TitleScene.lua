@@ -2,7 +2,7 @@
 -- Start screen: Up/Down pick a scene, A confirms. Rendered with the playout
 -- UI library, see libraries/playout.lua.
 
-import "scripts/Config"
+import "scripts/utilities/Config"
 
 local gfx <const> = playdate.graphics
 

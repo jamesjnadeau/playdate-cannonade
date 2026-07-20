@@ -1,6 +1,6 @@
 -- StormCloud.lua
 -- A slow-moving hazard summoned by the "Storm Cloud" upgrade
--- (source/scripts/ConfigUpgrades.lua): drifts toward whichever enemy is
+-- (source/scripts/player/ConfigUpgrades.lua): drifts toward whichever enemy is
 -- currently nearest and, on a fixed interval, damages every enemy within
 -- Config.STORM_CLOUD_RADIUS -- not just the one it's drifting toward, so a
 -- second enemy that wanders into range still takes damage. With no enemy
@@ -12,8 +12,8 @@
 -- the actual damage application (see GameScene:updateStormClouds), the same
 -- split as Tridentball/the trident collision loop.
 
-import "scripts/Config"
-import "scripts/Utils"
+import "scripts/utilities/Config"
+import "scripts/utilities/Utils"
 
 local gfx <const> = playdate.graphics
 

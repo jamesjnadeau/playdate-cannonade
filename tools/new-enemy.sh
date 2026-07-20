@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Scaffolds a new Enemy subclass: source/scripts/Enemy<Name>.lua plus a
+# Scaffolds a new Enemy subclass: source/scripts/enemies/Enemy<Name>.lua plus a
 # matching Config.ENEMY_<NAME>_* tuning block appended to ConfigEnemy.lua.
 # Mirrors EnemySwordfish.lua / its ConfigEnemy.lua section.
 #
@@ -25,7 +25,7 @@ SNAKE="$(sed -E 's/([a-z0-9])([A-Z])/\1_\2/g' <<< "$NAME" | tr '[:lower:]' '[:up
 PREFIX="ENEMY_${SNAKE}"
 
 ROOT="$(cd "$(dirname "$0")/.." && pwd)"
-SCRIPTS="$ROOT/source/scripts"
+SCRIPTS="$ROOT/source/scripts/enemies"
 ENEMY_FILE="$SCRIPTS/Enemy${NAME}.lua"
 CONFIG_FILE="$SCRIPTS/ConfigEnemy.lua"
 
@@ -46,10 +46,10 @@ cat > "$ENEMY_FILE" <<LUA
 -- already read from instance fields, so this subclass just points those
 -- fields at its own config values.
 
-import "scripts/Config"
-import "scripts/ConfigEnemy"
-import "scripts/Utils"
-import "scripts/Enemy"
+import "scripts/utilities/Config"
+import "scripts/enemies/ConfigEnemy"
+import "scripts/utilities/Utils"
+import "scripts/enemies/Enemy"
 
 class("Enemy${NAME}").extends(Enemy)
 
@@ -119,6 +119,6 @@ echo "Appended Config.${PREFIX}_* section to $CONFIG_FILE"
 
 echo
 echo "Next steps to wire it in:"
-echo "  1. Add 'import \"scripts/Enemy${NAME}\"' to source/main.lua (next to the other Enemy imports)"
-echo "  2. Add 'import \"scripts/Enemy${NAME}\"' and Enemy${NAME} to GameScene.enemyTypes in source/scenes/GameScene.lua"
+echo "  1. Add 'import \"scripts/enemies/Enemy${NAME}\"' to source/main.lua (next to the other Enemy imports)"
+echo "  2. Add 'import \"scripts/enemies/Enemy${NAME}\"' and Enemy${NAME} to GameScene.enemyTypes in source/scenes/GameScene.lua"
 echo "  3. Tune the Config.${PREFIX}_* values in $CONFIG_FILE and give it a distinct hull/look in $ENEMY_FILE"

@@ -6,7 +6,7 @@
 -- and returns to GameSceneTraining, Ⓑ cancels back without changing the current
 -- selection.
 
-import "scripts/Config"
+import "scripts/utilities/Config"
 
 local gfx <const> = playdate.graphics
 

@@ -18,12 +18,12 @@
 
 dofile("tests/support/mock_noble.lua")
 
-dofile("source/scripts/Config.lua")
-dofile("source/scripts/ConfigEnemy.lua")
-dofile("source/scripts/ConfigUpgrades.lua")
-dofile("source/scripts/Utils.lua")
-dofile("source/scripts/MusicPlayer.lua")
-dofile("source/scripts/MenuCard.lua")
+dofile("source/scripts/utilities/Config.lua")
+dofile("source/scripts/enemies/ConfigEnemy.lua")
+dofile("source/scripts/player/ConfigUpgrades.lua")
+dofile("source/scripts/utilities/Utils.lua")
+dofile("source/scripts/utilities/MusicPlayer.lua")
+dofile("source/scripts/utilities/MenuCard.lua")
 
 dofile("tests/support/mock_game_scene.lua") -- stands in for source/scenes/GameScene.lua
 

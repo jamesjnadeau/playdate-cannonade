@@ -31,8 +31,8 @@
 --    toggling it needs a side effect, syncing Noble.showFPS, that this
 --    scene's generic toggleBoolean doesn't perform).
 
-import "scripts/Config"
-import "scripts/Utils"
+import "scripts/utilities/Config"
+import "scripts/utilities/Utils"
 
 local gfx <const> = playdate.graphics
 

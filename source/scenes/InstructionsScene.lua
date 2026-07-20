@@ -7,9 +7,9 @@
 -- gets its own step, so the player exercises both instead of whichever's
 -- more convenient. Ⓑ exits back to Title at any point, regardless of step.
 
-import "scripts/Config"
-import "scripts/Utils"
-import "scripts/EnemyDummy"
+import "scripts/utilities/Config"
+import "scripts/utilities/Utils"
+import "scripts/enemies/EnemyDummy"
 import "scenes/GameScene"
 
 local gfx <const> = playdate.graphics

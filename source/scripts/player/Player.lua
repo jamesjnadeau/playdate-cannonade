@@ -1,9 +1,9 @@
 -- Player.lua
 -- The player-controlled pirate ship.
 
-import "scripts/Config"
-import "scripts/Utils"
-import "scripts/Ship"
+import "scripts/utilities/Config"
+import "scripts/utilities/Utils"
+import "scripts/utilities/Ship"
 
 local gfx <const> = playdate.graphics
 

@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 # Renders a MIDI file to a directory of ADPCM-encoded .wav pieces via
 # fluidsynth + ffmpeg -- offline preprocessing for
-# source/scripts/MusicPlayer.lua, which streams pre-rendered audio far more
+# source/scripts/utilities/MusicPlayer.lua, which streams pre-rendered audio far more
 # cheaply than a live playdate.sound.synth-per-note approach (see Inside
 # Playdate section 7.28: "ADPCM is the ideal audio format to use for
 # Playdate games"). Splitting into pieces (rather than one big .wav) means

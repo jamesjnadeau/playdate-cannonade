@@ -28,11 +28,15 @@ source/
     TitleScene.lua      Start screen
     GameScene.lua       Sailing + combat: input, camera, spawning, HUD, arrows
   scripts/
-    Config.lua          All tuning values
-    Utils.lua           Math + dotted-line helpers
-    Ship.lua            Player ship (movement, wake particles, drawing)
-    Enemy.lua           Chasing enemy ship
-    Tridentball.lua     Projectile
+    player/
+      Player.lua         Player ship (movement, wake particles, drawing)
+      Tridentball.lua    Projectile
+    enemies/
+      Enemy.lua          Chasing enemy ship
+    utilities/
+      Config.lua         All tuning values
+      Utils.lua          Math + dotted-line helpers
+      Ship.lua           Base class for Player/Enemy
   libraries/
     noble/              Noble Engine   (fetched — see below)
     pdParticles.lua     pdParticles    (fetched — see below)
@@ -111,4 +115,4 @@ If the `pd-rs/get-playdate-sdk@0.5.0` pin ever fails, try `@0.4` or `@latest`.
 ## Tuning
 
 Nearly every knob — world size, ship speed, turn feel, spawn ramp, trident power —
-lives in `source/scripts/Config.lua`.
+lives in `source/scripts/utilities/Config.lua`.

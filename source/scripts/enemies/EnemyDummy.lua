@@ -4,8 +4,8 @@
 -- or ramming them. Not one of GameScene.enemyTypes -- never eligible for
 -- random spawning in real gameplay.
 
-import "scripts/Config"
-import "scripts/Enemy"
+import "scripts/utilities/Config"
+import "scripts/enemies/Enemy"
 
 ---@class EnemyDummy : Enemy
 EnemyDummy = class("EnemyDummy").extends(Enemy) or EnemyDummy

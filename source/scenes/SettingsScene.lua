@@ -14,9 +14,9 @@
 -- volume; Ⓐ toggles a HUD setting or opens Tuning; Ⓑ returns to the title
 -- screen.
 
-import "scripts/Config"
-import "scripts/Utils"
-import "scripts/MusicPlayer"
+import "scripts/utilities/Config"
+import "scripts/utilities/Utils"
+import "scripts/utilities/MusicPlayer"
 
 local gfx <const> = playdate.graphics
 

@@ -2,7 +2,7 @@
 -- Reached from LevelCompleteScene after clearing a level. Offers 3 randomly
 -- drawn entries from Config.UPGRADES (see ConfigUpgrades.lua). The "select"
 -- phase (list of titles + description of whichever is highlighted) is
--- rendered via MenuCard (source/scripts/MenuCard.lua), the same
+-- rendered via MenuCard (source/scripts/utilities/MenuCard.lua), the same
 -- list+description card layout UpgradeTestScene uses; the "result" phase
 -- (before/after summary once Ⓐ is pressed) is its own simple centered
 -- playout tree, since it has no list to lay out. Up/Down move the
@@ -12,9 +12,9 @@
 -- GameSceneMain.gameSceneClass), mirroring LevelCompleteScene's own
 -- transition logic.
 
-import "scripts/Config"
-import "scripts/ConfigUpgrades"
-import "scripts/MenuCard"
+import "scripts/utilities/Config"
+import "scripts/player/ConfigUpgrades"
+import "scripts/utilities/MenuCard"
 
 local gfx <const> = playdate.graphics
 

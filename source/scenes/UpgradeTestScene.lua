@@ -1,6 +1,6 @@
 -- UpgradeTestScene.lua
 -- Reached from GameSceneTraining's "Test Upgrade" system-menu item. Lists
--- every entry in Config.UPGRADES (source/scripts/ConfigUpgrades.lua) --
+-- every entry in Config.UPGRADES (source/scripts/player/ConfigUpgrades.lua) --
 -- unlike UpgradeSelectScene's random draw of 3, the whole pool, and unlike
 -- UpgradeSelectScene's pickUpgrades, ignoring each entry's `available`
 -- predicate (e.g. "Rapid Autocannon" normally requires the Autofire Cannon
@@ -13,12 +13,12 @@
 -- several picks in a row, so it goes straight back to the sandbox instead of
 -- pausing on a summary each time.
 --
--- Rendered via MenuCard (source/scripts/MenuCard.lua), the same
+-- Rendered via MenuCard (source/scripts/utilities/MenuCard.lua), the same
 -- list+description card layout UpgradeSelectScene's "select" phase uses.
 
-import "scripts/Config"
-import "scripts/ConfigUpgrades"
-import "scripts/MenuCard"
+import "scripts/utilities/Config"
+import "scripts/player/ConfigUpgrades"
+import "scripts/utilities/MenuCard"
 
 local gfx <const> = playdate.graphics
 
