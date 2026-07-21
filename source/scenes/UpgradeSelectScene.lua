@@ -3,15 +3,16 @@
 -- drawn entries from Config.UPGRADES (see ConfigUpgrades.lua). The "select"
 -- phase (list of titles + description of whichever is highlighted) is
 -- rendered via MenuCard (source/scripts/utilities/MenuCard.lua), the same
--- list+description card layout UpgradeTestScene uses; the "result" phase
--- (before/after summary once Ⓐ is pressed) is its own simple centered
+-- list+description card layout UpgradeTestScene uses; the "confirm" phase
+-- (before/after preview once Ⓐ is pressed) is its own simple centered
 -- playout tree, since it has no list to lay out. Up/Down (or the crank,
--- while in the "select" phase) move the highlight, Ⓐ applies the
--- highlighted upgrade (via Config.applyUpgrade)
--- and swaps to the before/after summary; a second Ⓐ continues on to
--- WindShiftScene or straight back to self.gameScene (see
--- GameSceneMain.gameSceneClass), mirroring LevelCompleteScene's own
--- transition logic.
+-- while in the "select" phase) move the highlight, Ⓐ previews the
+-- highlighted upgrade (via Config.previewUpgrade, which doesn't touch
+-- Config) and swaps to the before/after screen; from there Ⓐ commits it
+-- (via Config.applyUpgrade) and continues on to WindShiftScene or straight
+-- back to self.gameScene (see GameSceneMain.gameSceneClass), mirroring
+-- LevelCompleteScene's own transition logic, while Ⓑ backs out to the
+-- select list without applying anything.
 
 import "scripts/utilities/Config"
 import "scripts/player/ConfigUpgrades"
@@ -34,13 +35,13 @@ local MENU_FONT = nil
 ---@field gameScene table class table (GameSceneMain or a subclass, e.g. GameSceneDemo) to eventually return to -- see GameSceneMain.gameSceneClass
 ---@field upgrades Config.Upgrade[] this round's 3 random picks
 ---@field selected integer index into self.upgrades
----@field phase string "select" | "result"
+---@field phase string "select" | "confirm"
 ---@field layout MenuCard.Layout set once phase == "select", see rebuild()
----@field resultTree table playout tree, set once phase == "result", see rebuild()
----@field resultImg _Image drawn image of resultTree, set once phase == "result", see rebuild()
----@field upgrade Config.Upgrade set once phase == "result"
----@field oldValue number set once phase == "result"
----@field newValue number set once phase == "result"
+---@field resultTree table playout tree, set once phase == "confirm", see rebuild()
+---@field resultImg _Image drawn image of resultTree, set once phase == "confirm", see rebuild()
+---@field upgrade Config.Upgrade set once phase == "confirm"
+---@field oldValue number set once phase == "confirm"
+---@field newValue number set once phase == "confirm"
 ---@field crankAccum number leftover crank degrees not yet converted into a selection move, see the cranked handler
 UpgradeSelectScene = class("UpgradeSelectScene").extends(NobleScene) or UpgradeSelectScene
 
@@ -71,8 +72,8 @@ local function pickUpgrades(count)
 	return picks
 end
 
--- Result screen: the chosen upgrade's title plus a before/after readout of
--- the stat it touched.
+-- Confirm screen: the chosen upgrade's title plus a before/after preview of
+-- the stat it would touch, and a Ⓐ confirm / Ⓑ back prompt.
 ---@param upgrade Config.Upgrade
 ---@param oldValue number
 ---@param newValue number
@@ -82,7 +83,7 @@ local function buildResultTree(upgrade, oldValue, newValue)
 		playout.text.new(upgrade.title .. "!"),
 		playout.text.new("Was: " .. upgrade.format(oldValue)),
 		playout.text.new("Now: " .. upgrade.format(newValue)),
-		playout.text.new("Ⓐ continue"),
+		playout.text.new("Ⓐ confirm   Ⓑ back"),
 	}
 
 	local root = playout.box.new({
@@ -110,7 +111,7 @@ function UpgradeSelectScene:init(sceneProperties)
 
 	self.upgrades = pickUpgrades(3)
 	self.selected = 1
-	self.phase = "select" -- "select" -> "result"
+	self.phase = "select" -- "select" <-> "confirm"
 	self.crankAccum = 0
 
 	-- Built here rather than in :start() -- Noble may call :update() during
@@ -153,13 +154,14 @@ UpgradeSelectScene.inputHandler = {
 		if not scene then return end
 		if scene.phase == "select" then
 			local upgrade = scene.upgrades[scene.selected]
-			local oldValue, newValue = Config.applyUpgrade(upgrade)
+			local oldValue, newValue = Config.previewUpgrade(upgrade)
 			scene.upgrade = upgrade
 			scene.oldValue = oldValue
 			scene.newValue = newValue
-			scene.phase = "result"
+			scene.phase = "confirm"
 			scene:rebuild()
 		else
+			Config.applyUpgrade(scene.upgrade)
 			local windStepped = GameSceneMain.windStepForLevel(scene.level)
 				> GameSceneMain.windStepForLevel(scene.completedLevel)
 			local nextScene = windStepped and WindShiftScene or scene.gameScene
@@ -170,9 +172,14 @@ UpgradeSelectScene.inputHandler = {
 			})
 		end
 	end,
+	BButtonDown = function()
+		if not scene or scene.phase ~= "confirm" then return end
+		scene.phase = "select"
+		scene:rebuild()
+	end,
 	-- Same fast-scroll idea as TuningScene.lua: the crank moves the
 	-- highlight one item per CRANK_DEGREES_PER_ITEM degrees turned, in
-	-- either direction (a no-op once phase == "result", same as
+	-- either direction (a no-op once phase == "confirm", same as
 	-- moveSelection). crankAccum carries leftover sub-threshold rotation
 	-- between calls.
 	cranked = function(change)

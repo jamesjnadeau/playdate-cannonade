@@ -346,19 +346,22 @@ Offers 3 randomly-drawn entries from `Config.UPGRADES`
 installed) are excluded from the draw pool until it returns true; see
 `pickUpgrades` — rendered with
 [playout](../libraries/playout.lua). Two phases: `"select"` (pick one) then
-`"result"` (before/after readout), each its own screen behind the same A
-button. Carries the level/wind-step/gameScene handoff the rest of the way —
-decides whether the run continues straight back into `self.gameScene` or
-detours through `WindShiftScene` first.
+`"confirm"` (before/after preview, via `Config.previewUpgrade` which doesn't
+touch Config), each its own screen. A on the confirm screen commits the pick
+(`Config.applyUpgrade`) and moves on; B backs out to the select list without
+applying anything. Carries the level/wind-step/gameScene handoff the rest of
+the way — decides whether the run continues straight back into
+`self.gameScene` or detours through `WindShiftScene` first.
 
 - **Reached from:** `LevelCompleteScene`.
 - **Controls:** Up/Down (or the crank) move the highlight (`"select"` phase
-  only); A applies the highlighted upgrade (via `Config.applyUpgrade`) and
-  swaps to the result screen; a second A continues on.
+  only); A previews the highlighted upgrade (via `Config.previewUpgrade`) and
+  swaps to the confirm screen; from there, A commits it (via
+  `Config.applyUpgrade`) and continues on, B returns to the select list.
 - **sceneProperties read:** `level` (default 1), `completedLevel` (default
   `level - 1`), `totalDefeated` (default 0), `gameScene` (default
   `GameSceneMain`).
-- **Transitions out (second A press, from `"result"` phase):**
+- **Transitions out (A press from `"confirm"` phase):**
   - `GameSceneMain.windStepForLevel(level) > GameSceneMain.windStepForLevel(completedLevel)`
     → `Noble.transition(WindShiftScene, ..., { level, totalDefeated, gameScene })`
   - otherwise → `Noble.transition(self.gameScene, ..., { level, totalDefeated, gameScene })`

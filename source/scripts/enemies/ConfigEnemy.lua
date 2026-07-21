@@ -80,7 +80,7 @@ Config.ENEMY_SWORDFISH_WIND_MULTIPLIER = Config.ENEMY_WIND_MULTIPLIER
 Config.ENEMY_SWORDFISH_COLOR      = gfx.kColorBlack
 Config.ENEMY_SWORDFISH_OUTLINE_COLOR = gfx.kColorWhite -- distinguishes it from the base enemy's silhouette at a glance
 Config.ENEMY_SWORDFISH_EYE_OFFSET = 4   -- px the eye dot sits ahead of center, scaled down to match its smaller hull
-Config.ENEMY_SWORDFISH_MIN_LEVEL  = 3   -- unlocked starting this level (appears after level 2) -- see Config.ENEMY_MIN_LEVEL
+Config.ENEMY_SWORDFISH_MIN_LEVEL  = 5   -- unlocked starting this level (appears after level 2) -- see Config.ENEMY_MIN_LEVEL
 -- The bill tip (bow point of the hull) sits BILL_LENGTH past the body, but
 -- ENEMY_SWORDFISH_RADIUS (the collision radius) only counts half of that --
 -- see Enemy.healthBarOffset -- so nudge the health bar out by the other half
@@ -108,7 +108,7 @@ Config.ENEMY_KRAKEN_DAMAGE     = Config.ENEMY_DAMAGE
 Config.ENEMY_KRAKEN_WIND_MULTIPLIER = Config.ENEMY_WIND_MULTIPLIER
 Config.ENEMY_KRAKEN_COLOR      = gfx.kColorBlack
 Config.ENEMY_KRAKEN_OUTLINE_COLOR = gfx.kColorWhite
-Config.ENEMY_KRAKEN_MIN_LEVEL  = 4   -- unlocked starting this level, tougher than the swordfish -- see Config.ENEMY_MIN_LEVEL
+Config.ENEMY_KRAKEN_MIN_LEVEL  = 3   -- unlocked starting this level, tougher than the swordfish -- see Config.ENEMY_MIN_LEVEL
 -- The direction-indicator dots are purely visual (ENEMY_KRAKEN_RADIUS, the
 -- collision radius, ignores them) but reach farther from center than the
 -- body itself -- see Enemy.healthBarOffset -- so nudge the health bar out by

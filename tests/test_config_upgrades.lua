@@ -1,8 +1,10 @@
 -- test_config_upgrades.lua
--- Covers Config.applyUpgrade (source/scripts/player/ConfigUpgrades.lua) -- the
--- multiplier/delta/clamp math UpgradeSelectScene relies on to mutate Config
--- and compute the before/after stat values it displays -- plus a sanity
--- check that every entry in Config.UPGRADES is well-formed (catches typo'd
+-- Covers Config.applyUpgrade/Config.previewUpgrade (source/scripts/player/
+-- ConfigUpgrades.lua) -- the multiplier/delta/clamp math UpgradeSelectScene
+-- relies on to compute the before/after stat values it displays on its
+-- confirm screen (previewUpgrade, without touching Config) and, once
+-- confirmed, actually mutate Config (applyUpgrade) -- plus a sanity check
+-- that every entry in Config.UPGRADES is well-formed (catches typo'd
 -- configKeys or a bad format() before they'd surface as a blank/garbled
 -- stat in-game).
 
@@ -52,6 +54,16 @@ function TestConfigUpgrades:testMaxValueClamp()
 	local old, new = Config.applyUpgrade({ configKey = "TEST_STAT", delta = 100, maxValue = 20 })
 	lu.assertEquals(old, 10)
 	lu.assertEquals(new, 20)
+end
+
+-- previewUpgrade computes the same before/after values as applyUpgrade but
+-- must leave Config untouched, so backing out of UpgradeSelectScene's
+-- confirm screen has nothing to undo.
+function TestConfigUpgrades:testPreviewMatchesApplyWithoutMutatingConfig()
+	local old, new = Config.previewUpgrade({ configKey = "SHIP_ACCEL", multiplier = 1.25 })
+	lu.assertEquals(old, self.savedShipAccel)
+	lu.assertEquals(new, old * 1.25)
+	lu.assertEquals(Config.SHIP_ACCEL, self.savedShipAccel) -- unchanged
 end
 
 -- Every gated upgrade (an `available` predicate keyed off some other

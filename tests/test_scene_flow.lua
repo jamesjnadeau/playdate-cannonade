@@ -595,20 +595,42 @@ function TestSceneFlow:testUpgradeSelectWithoutWindStepGoesStraightToGameSceneMa
 	Noble.Input.fire("downButtonDown")
 	lu.assertEquals(scene.selected, 2)
 
-	Noble.Input.fire("AButtonDown") -- pick highlighted upgrade -> "result" phase
-	lu.assertEquals(scene.phase, "result")
+	Noble.Input.fire("AButtonDown") -- pick highlighted upgrade -> "confirm" phase
+	lu.assertEquals(scene.phase, "confirm")
 	lu.assertNotEquals(scene.oldValue, scene.newValue)
+	lu.assertEquals(Config[scene.upgrade.configKey], scene.oldValue) -- preview only, not yet applied
 
-	Noble.Input.fire("AButtonDown") -- continue
+	Noble.Input.fire("AButtonDown") -- confirm
 	lu.assertEquals(currentClassName(), "GameSceneMain")
 	lu.assertEquals(Noble.currentScene().level, 2)
 	lu.assertEquals(Noble.currentScene().score, 5)
 end
 
+-- Ⓑ on the confirm screen backs out to the select list instead of applying
+-- the upgrade -- see UpgradeSelectScene's BButtonDown handler.
+function TestSceneFlow:testUpgradeSelectBackButtonReturnsToSelectWithoutApplying()
+	Noble.transition(UpgradeSelectScene, nil, nil, nil, { level = 2, completedLevel = 1, totalDefeated = 0 })
+	local scene = Noble.currentScene()
+
+	Noble.Input.fire("AButtonDown") -- select -> confirm
+	local upgrade = scene.upgrade
+	local configKey = upgrade.configKey
+	local originalValue = Config[configKey]
+
+	Noble.Input.fire("BButtonDown") -- back out
+	lu.assertEquals(scene.phase, "select")
+	lu.assertEquals(Config[configKey], originalValue) -- never applied
+
+	Noble.Input.fire("AButtonDown") -- select -> confirm, again
+	Noble.Input.fire("AButtonDown") -- confirm this time
+	lu.assertEquals(currentClassName(), "GameSceneMain")
+	lu.assertNotEquals(Config[configKey], originalValue)
+end
+
 -- Exercises the crank fast-scroll path (moves one item per 20 degrees, see
 -- UpgradeSelectScene.CRANK_DEGREES_PER_ITEM) and confirms it stops moving the
--- selection once phase == "result" (moveSelection's own guard).
-function TestSceneFlow:testUpgradeSelectCrankScrollAndStopsAfterResult()
+-- selection once phase == "confirm" (moveSelection's own guard).
+function TestSceneFlow:testUpgradeSelectCrankScrollAndStopsAfterConfirm()
 	Noble.transition(UpgradeSelectScene, nil, nil, nil, { level = 2, completedLevel = 1, totalDefeated = 0 })
 	local scene = Noble.currentScene()
 	lu.assertEquals(scene.selected, 1)
@@ -616,18 +638,18 @@ function TestSceneFlow:testUpgradeSelectCrankScrollAndStopsAfterResult()
 	Noble.Input.fire("cranked", 20)
 	lu.assertEquals(scene.selected, 2)
 
-	Noble.Input.fire("AButtonDown") -- select -> result
-	lu.assertEquals(scene.phase, "result")
+	Noble.Input.fire("AButtonDown") -- select -> confirm
+	lu.assertEquals(scene.phase, "confirm")
 
-	Noble.Input.fire("cranked", 20) -- no-op once in "result" phase
+	Noble.Input.fire("cranked", 20) -- no-op once in "confirm" phase
 	lu.assertEquals(scene.selected, 2)
 end
 
 function TestSceneFlow:testUpgradeSelectWithWindStepGoesToWindShiftScene()
 	-- windStepForLevel(4) == 1 > windStepForLevel(3) == 0: level 4 escalates.
 	Noble.transition(UpgradeSelectScene, nil, nil, nil, { level = 4, completedLevel = 3, totalDefeated = 12 })
-	Noble.Input.fire("AButtonDown") -- select -> result
-	Noble.Input.fire("AButtonDown") -- continue
+	Noble.Input.fire("AButtonDown") -- select -> confirm
+	Noble.Input.fire("AButtonDown") -- confirm
 
 	lu.assertEquals(currentClassName(), "WindShiftScene")
 	local scene = Noble.currentScene()

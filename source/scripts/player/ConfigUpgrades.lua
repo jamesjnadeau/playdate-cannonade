@@ -152,6 +152,25 @@ Config.UPGRADES = {
 	},
 }
 
+-- Computes the before/after values `upgrade` would produce without touching
+-- Config, so a caller (UpgradeSelectScene's confirm screen) can preview a
+-- "was -> now" summary before committing to it.
+---@param upgrade Config.Upgrade
+---@return number old
+---@return number new
+function Config.previewUpgrade(upgrade)
+	local old = Config[upgrade.configKey]
+	local new = old
+	if upgrade.multiplier then
+		new = old * upgrade.multiplier
+	elseif upgrade.delta then
+		new = old + upgrade.delta
+	end
+	if upgrade.minValue and new < upgrade.minValue then new = upgrade.minValue end
+	if upgrade.maxValue and new > upgrade.maxValue then new = upgrade.maxValue end
+	return old, new
+end
+
 -- Applies `upgrade` to the live Config table and returns the before/after
 -- values so the caller (UpgradeSelectScene) can render a "was -> now"
 -- summary. Config fields touched here (SHIP_ACCEL, SHIP_COLLIDE_RADIUS,
@@ -162,15 +181,7 @@ Config.UPGRADES = {
 ---@return number old
 ---@return number new
 function Config.applyUpgrade(upgrade)
-	local old = Config[upgrade.configKey]
-	local new = old
-	if upgrade.multiplier then
-		new = old * upgrade.multiplier
-	elseif upgrade.delta then
-		new = old + upgrade.delta
-	end
-	if upgrade.minValue and new < upgrade.minValue then new = upgrade.minValue end
-	if upgrade.maxValue and new > upgrade.maxValue then new = upgrade.maxValue end
+	local old, new = Config.previewUpgrade(upgrade)
 	Config[upgrade.configKey] = new
 	return old, new
 end
