@@ -42,6 +42,11 @@ local cloudImageGrey = gfx.image.new(cloudImageWidth, cloudImageHeight)
 gfx.pushContext(cloudImageGrey)
 	gfx.setColor(gfx.kColorWhite)
 	gfx.fillRect(0, 0, cloudImageWidth, cloudImageHeight)
+	-- setDitherPattern special-cases a white current drawing color (pattern
+	-- becomes white-on-transparent with an inverted alpha, per the SDK docs)
+	-- -- switch back to black first so this draws black pixels on transparent
+	-- at the coverage we actually asked for, not an inverted white no-op.
+	gfx.setColor(gfx.kColorBlack)
 	gfx.setDitherPattern(Config.STORM_CLOUD_GREY_ALPHA, gfx.image.kDitherTypeBayer4x4)
 	gfx.fillRect(0, 0, cloudImageWidth, cloudImageHeight)
 	gfx.setColor(gfx.kColorBlack) -- clear the dither pattern so it doesn't leak into later draws
