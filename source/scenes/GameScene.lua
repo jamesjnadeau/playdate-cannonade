@@ -354,7 +354,7 @@ end
 function GameScene:fireCannon(target)
 	local ship = self.ship
 	local dir = Utils.angleTo(ship.x, ship.y, target.x, target.y)
-	local speed = Config.TRIDENT_SPEED
+	local speed = Config.AUTOFIRE_CANNON_SPEED
 	local hx, hy = Utils.heading(dir)
 	local bx = ship.x + hx * (Config.SHIP_LENGTH + 4)
 	local by = ship.y + hy * (Config.SHIP_LENGTH + 4)

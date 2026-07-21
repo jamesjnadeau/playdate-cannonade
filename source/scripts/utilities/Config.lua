@@ -162,7 +162,8 @@ Config.NO_TARGET_MARK_OFFSET = 30 -- distance (px) from the ship's center to tha
 Config.AUTOFIRE_CANNON_UNLOCKED = 0     -- 0 = not installed, >0 = installed; set by the upgrade
 Config.AUTOFIRE_CANNON_DAMAGE   = 0.5     -- health removed from an enemy per cannon hit
 Config.AUTOFIRE_CANNON_DELAY    = 2   -- seconds between shots
-Config.AUTOFIRE_CANNON_RANGE    = Config.TARGET_RANGE / 2.5 -- max auto-target acquisition distance
+Config.AUTOFIRE_CANNON_RANGE    = Config.TARGET_RANGE * 3 / 4 -- max auto-target acquisition distance
+Config.AUTOFIRE_CANNON_SPEED    = Config.TRIDENT_SPEED -- muzzle speed of each cannon shot
 -- Seconds AUTOFIRE_CANNON_DELAY drops by per pick of the "Rapid Autocannon"
 -- upgrade (only offered once AUTOFIRE_CANNON_UNLOCKED -- see ConfigUpgrades.lua).
 Config.AUTOFIRE_CANNON_DELAY_STEP = 0.25
