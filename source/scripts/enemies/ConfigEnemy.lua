@@ -184,6 +184,10 @@ Config.ENEMY_SEA_SERPENT_HEAD_WIDTH = 8
 Config.ENEMY_SEA_SERPENT_SEGMENT_COUNT = 6
 Config.ENEMY_SEA_SERPENT_SEGMENT_RADIUS = 12  -- px radius of each body ellipse
 Config.ENEMY_SEA_SERPENT_SEGMENT_SEPARATION = 36  -- px between consecutive segment centers along the path
+-- Fraction of SEGMENT_RADIUS the tail-tip segment is drawn at, linearly
+-- tapered from full size at the neck (see EnemySeaSerpent:segmentRadiusAt) --
+-- 1.0 would mean no taper (every segment the same size).
+Config.ENEMY_SEA_SERPENT_TAIL_TAPER = 0.35
 -- Nothing reaches past the collision radius in the direction that matters for
 -- the health bar (only the trailing body extends further, and that's behind
 -- the head, not below it) -- see Enemy.healthBarOffset.

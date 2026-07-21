@@ -12,8 +12,15 @@
 -- history, not a rigid shape rotated with the head, so this class tracks its
 -- own self.trail and overrides :draw() entirely rather than going through
 -- Ship's cached-body-image + drawRotated path (see EnemySeaSerpent:updateTrail
--- / :draw). A black triangle head leads the way, drawn frontmost. All tuning
--- lives in Config.ENEMY_SEA_SERPENT_* (see ConfigEnemy.lua).
+-- / :draw). A black triangle head leads the way, drawn frontmost.
+--
+-- The trail starts empty (see :init), so the body rolls out behind the head
+-- over its first few segment-lengths of travel rather than the full length
+-- popping into existence at spawn, and each segment's drawn size tapers from
+-- full at the neck down to Config.ENEMY_SEA_SERPENT_TAIL_TAPER at the tail
+-- tip (see EnemySeaSerpent:segmentRadiusAt), so the growing edge always reads
+-- as a smoothly narrowing tail rather than uniform dots appearing one by one.
+-- All tuning lives in Config.ENEMY_SEA_SERPENT_* (see ConfigEnemy.lua).
 
 import "scripts/utilities/Config"
 import "scripts/enemies/ConfigEnemy"
@@ -71,15 +78,11 @@ function EnemySeaSerpent:init(x, y, heading)
 	self.headLength = Config.ENEMY_SEA_SERPENT_HEAD_LENGTH
 	self.headWidth = Config.ENEMY_SEA_SERPENT_HEAD_WIDTH
 
-	-- Pre-fill the trail behind the spawn point so the body reads as a full
-	-- length immediately instead of growing in from nothing as it swims --
-	-- see updateTrail, which extends this same list going forward.
-	local hx, hy = Utils.heading(self.heading)
+	-- Starts with no trail at all -- see updateTrail, which appends to this
+	-- list as it swims -- so the body rolls out behind the head over its
+	-- first SEGMENT_COUNT * SEGMENT_SEPARATION px of travel instead of the
+	-- full length popping into existence at spawn.
 	self.trail = {}
-	for i = 1, self.segmentCount do
-		local d = self.segmentSeparation * i
-		self.trail[i] = { x = x - hx * d, y = y - hy * d }
-	end
 	self.trailDist = 0
 	self.prevX, self.prevY = x, y
 
@@ -173,6 +176,22 @@ function EnemySeaSerpent:updateTrail()
 	end
 end
 
+-- Radius to draw the i-th body segment at (i=1 is the segment right behind
+-- the head, i=segmentCount is the tail tip), linearly tapered from full
+-- segmentRadius down to segmentRadius * Config.ENEMY_SEA_SERPENT_TAIL_TAPER.
+-- Since table.insert(self.trail, 1, ...) pushes every existing sample one
+-- index farther back each time a new one is recorded (see updateTrail), a
+-- given sample's index -- and so its drawn radius here -- grows every frame
+-- it ages further from the head, shrinking smoothly toward the tail tip
+-- rather than every segment popping in at a uniform size.
+---@param i integer
+---@return number
+function EnemySeaSerpent:segmentRadiusAt(i)
+	local t = (i - 1) / math.max(1, self.segmentCount - 1)
+	local scale = 1 - t * (1 - Config.ENEMY_SEA_SERPENT_TAIL_TAPER)
+	return self.segmentRadius * scale
+end
+
 -- EnemySelectScene's preview pane (see the module comment above and
 -- EnemySelectScene.lua:54) is a small fixed-width box (MenuCard's descWidth,
 -- ~180px, shared with 4 lines of stat text stacked below the image -- see
@@ -252,11 +271,12 @@ function EnemySeaSerpent:draw()
 
 	-- Body first (tail to head) so the head triangle ends up drawn on top of
 	-- the foremost body segment, reading as the segments trailing behind it
-	-- rather than the head poking out from underneath.
-	for i = self.segmentCount, 1, -1 do
+	-- rather than the head poking out from underneath. #self.trail (not
+	-- self.segmentCount) since the trail may still be rolling out -- see init.
+	for i = #self.trail, 1, -1 do
 		local p = self.trail[i]
-		gfx.fillEllipseInRect(p.x - self.segmentRadius, p.y - self.segmentRadius,
-			self.segmentRadius * 2, self.segmentRadius * 2)
+		local r = self:segmentRadiusAt(i)
+		gfx.fillEllipseInRect(p.x - r, p.y - r, r * 2, r * 2)
 	end
 
 	local hx, hy = Utils.heading(self.heading)
