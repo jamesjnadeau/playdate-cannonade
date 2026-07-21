@@ -10,7 +10,9 @@
 # instead of MusicPlayer reloading a new piece every ~60s, which caused an
 # audible stutter at every piece boundary (see git history for that
 # approach). pdc auto-compiles any .wav dropped under source/assets into
-# .pda at build time.
+# .pda at build time. The render is peak-normalized (see TARGET_PEAK_DB
+# below) since fluidsynth's default gain gets nowhere near 0dBFS and
+# otherwise plays back too quiet on device.
 #
 # Usage: tools/render-song.sh [--piano | --program N] <input.mid> [output.wav]
 #   e.g. tools/render-song.sh "art-src/music/Mozart.mid" "source/assets/songs/Mozart.wav"
@@ -89,8 +91,19 @@ fi
 echo "==> Synthesizing $INPUT with $SOUNDFONT"
 fluidsynth -ni "$SOUNDFONT" "$SYNTH_INPUT" -F "$TMP_RAW" -r 44100
 
+# fluidsynth's default synth.gain (0.2) renders well below 0dBFS -- normalize
+# the peak up to TARGET_PEAK_DB so songs are consistently loud on device
+# instead of however quiet a given soundfont/MIDI happens to synthesize.
+# Measured via a volumedetect pass rather than a fixed multiplier so this
+# adapts per song (and turns a rare already-hot render back down instead of
+# clipping it).
+TARGET_PEAK_DB="-1.0"
+MAX_VOLUME="$(ffmpeg -hide_banner -i "$TMP_RAW" -af volumedetect -f null - 2>&1 | grep "max_volume:" | awk '{print $5}')"
+GAIN_DB="$(awk -v target="$TARGET_PEAK_DB" -v max="$MAX_VOLUME" 'BEGIN { print target - max }')"
+echo "==> Normalizing: peak is ${MAX_VOLUME}dB, applying ${GAIN_DB}dB gain to reach ${TARGET_PEAK_DB}dB"
+
 echo "==> Encoding to ADPCM (44100Hz) -> $OUTPUT"
 mkdir -p "$(dirname "$OUTPUT")"
-ffmpeg -y -loglevel error -i "$TMP_RAW" -ar 44100 -acodec adpcm_ima_wav "$OUTPUT"
+ffmpeg -y -loglevel error -i "$TMP_RAW" -af "volume=${GAIN_DB}dB" -ar 44100 -acodec adpcm_ima_wav "$OUTPUT"
 
 echo "==> Wrote $OUTPUT"
