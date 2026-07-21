@@ -626,8 +626,7 @@ function GameScene:tickGame()
 			if ship:hit(e.damage) then
 				Sound.playPlayerHurt()
 				if ship.health <= 0 then
-					self.gameOver = true
-					Sound.playPlayerDeath()
+					self:onPlayerHealthDepleted()
 				end
 			end
 		end
@@ -658,6 +657,14 @@ function GameScene:tickGame()
 	end
 
 	self:updateStormClouds(dt)
+end
+
+-- Called when the player's health drops to 0 or below. Default behavior ends
+-- the run; GameSceneTraining overrides this to reset health and keep the
+-- sandbox running instead of kicking the tester back to the title screen.
+function GameScene:onPlayerHealthDepleted()
+	self.gameOver = true
+	Sound.playPlayerDeath()
 end
 
 -- ---------------------------------------------------------------------------

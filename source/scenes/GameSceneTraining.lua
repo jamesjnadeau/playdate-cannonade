@@ -111,3 +111,11 @@ end
 function GameSceneTraining:gameOverPrompt()
 	return "Ⓑ to return to menu"
 end
+
+-- Training is a sandbox for testing combat feel, not a scored run -- losing
+-- all health resets the player's health instead of ending the game, so
+-- testing isn't interrupted by having to back out to the title screen.
+function GameSceneTraining:onPlayerHealthDepleted()
+	self.ship.health = Config.SHIP_MAX_HEALTH
+	self.ship.alive = true
+end
