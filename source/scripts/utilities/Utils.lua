@@ -114,4 +114,47 @@ function Utils.drawDottedLine(x1, y1, x2, y2, dash, gap)
 	end
 end
 
+-- Jagged lightning-bolt path from (x1,y1) to (x2,y2): interpolates
+-- `segments` points evenly along the straight line and offsets each interior
+-- one (not the two endpoints, which stay exact) perpendicular to the line by
+-- a random amount up to +/-`jitter` px, giving the zigzag "electric" look
+-- instead of a straight stroke. Returned flat (x,y pairs in one array) so
+-- it's easy to store on a bolt effect and hand straight to Utils.drawPolyline
+-- every frame without recomputing the shape -- see
+-- GameScene:updateStormClouds/drawStormBolts.
+---@param x1 number
+---@param y1 number
+---@param x2 number
+---@param y2 number
+---@param segments integer
+---@param jitter number
+---@return number[] points flat x,y pairs from (x1,y1) to (x2,y2)
+function Utils.lightningBoltPoints(x1, y1, x2, y2, segments, jitter)
+	local dx, dy = x2 - x1, y2 - y1
+	local len = sqrt(dx * dx + dy * dy)
+	local nx, ny = 0, 0
+	if len > 0 then nx, ny = -dy / len, dx / len end
+
+	local points = { x1, y1 }
+	for i = 1, segments - 1 do
+		local t = i / segments
+		local offset = (math.random() * 2 - 1) * jitter
+		points[#points + 1] = x1 + dx * t + nx * offset
+		points[#points + 1] = y1 + dy * t + ny * offset
+	end
+	points[#points + 1] = x2
+	points[#points + 1] = y2
+	return points
+end
+
+-- Draws straight segments through flat x,y pairs (see
+-- Utils.lightningBoltPoints), connecting each consecutive point with
+-- gfx.drawLine.
+---@param points number[]
+function Utils.drawPolyline(points)
+	for i = 1, #points - 2, 2 do
+		gfx.drawLine(points[i], points[i + 1], points[i + 2], points[i + 3])
+	end
+end
+
 return Utils

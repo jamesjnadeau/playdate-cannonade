@@ -25,6 +25,7 @@ local gfx <const> = playdate.graphics
 ---@field enemies Enemy[]
 ---@field tridentballs Tridentball[]
 ---@field stormClouds StormCloud[]
+---@field stormBolts table[] active damage-bolt effects, each { points: number[], timer: number, frame: integer }, see updateStormClouds/updateStormBolts/drawStormBolts
 ---@field explosions table[] each { sys: table, age: number, maxAge: number }, see Ship:explode
 ---@field elapsed number
 ---@field score number
@@ -114,6 +115,7 @@ function GameScene:resetGame(sceneProperties)
 	self.enemies = {}
 	self.tridentballs = {}
 	self.stormClouds = {} -- lazily backfilled up to Config.STORM_CLOUD_COUNT, see updateStormClouds
+	self.stormBolts = {} -- active damage-bolt effects, see updateStormClouds/updateStormBolts/drawStormBolts
 	self.explosions = {}
 	self.elapsed = 0
 	self.score = 0
@@ -386,6 +388,7 @@ function GameScene:updateStormClouds(dt)
 			for i = #self.enemies, 1, -1 do
 				local e = self.enemies[i]
 				if Utils.dist(cloud.x, cloud.y, e.x, e.y) < (Config.STORM_CLOUD_RADIUS + e.radius) then
+					self:addStormBolt(cloud.x, cloud.y, e.x, e.y)
 					e:hit(Config.STORM_CLOUD_DAMAGE)
 					Sound.playEnemyHit()
 					if not e.alive then
@@ -397,6 +400,59 @@ function GameScene:updateStormClouds(dt)
 			end
 		end
 	end
+
+	self:updateStormBolts(dt)
+end
+
+-- Spawns one damage-bolt visual effect from (x1, y1) (a cloud's center) to
+-- (x2, y2) (the enemy it just damaged) -- called once per enemy hit from the
+-- loop above, so a cloud that damages several enemies on the same tick draws
+-- one bolt to each. The zigzag shape is rolled once here and stored rather
+-- than recomputed every draw, so the bolt doesn't visibly writhe while it's
+-- shown -- only its on/off flash (see drawStormBolts) changes frame to frame.
+---@param x1 number
+---@param y1 number
+---@param x2 number
+---@param y2 number
+function GameScene:addStormBolt(x1, y1, x2, y2)
+	self.stormBolts[#self.stormBolts + 1] = {
+		points = Utils.lightningBoltPoints(x1, y1, x2, y2, Config.STORM_CLOUD_BOLT_SEGMENTS, Config.STORM_CLOUD_BOLT_JITTER),
+		timer = Config.STORM_CLOUD_BOLT_DURATION,
+		frame = 0,
+	}
+end
+
+-- Ages every active damage bolt by dt, dropping ones whose
+-- Config.STORM_CLOUD_BOLT_DURATION has elapsed, and advances the frame
+-- counter drawStormBolts uses to flash the still-active ones.
+---@param dt number
+function GameScene:updateStormBolts(dt)
+	for i = #self.stormBolts, 1, -1 do
+		local bolt = self.stormBolts[i]
+		bolt.timer = bolt.timer - dt
+		if bolt.timer <= 0 then
+			table.remove(self.stormBolts, i)
+		else
+			bolt.frame = bolt.frame + 1
+		end
+	end
+end
+
+-- Draws every active damage bolt, flashing on/off every
+-- Config.STORM_CLOUD_BOLT_FLASH_FRAMES frames rather than staying solid for
+-- its whole duration -- called from render() alongside the storm clouds
+-- themselves, so bolts share their top-of-everything z-order.
+function GameScene:drawStormBolts()
+	if #self.stormBolts == 0 then return end
+	gfx.setColor(gfx.kColorBlack)
+	gfx.setLineWidth(Config.STORM_CLOUD_BOLT_WIDTH)
+	for _, bolt in ipairs(self.stormBolts) do
+		local flashStep = math.floor(bolt.frame / Config.STORM_CLOUD_BOLT_FLASH_FRAMES)
+		if flashStep % 2 == 0 then
+			Utils.drawPolyline(bolt.points)
+		end
+	end
+	gfx.setLineWidth(1)
 end
 
 -- ---------------------------------------------------------------------------
@@ -645,9 +701,11 @@ function GameScene:render()
 		end
 	end
 
-	-- Storm clouds drawn last of the world-space layer, on top of every
-	-- other sprite/effect above -- see StormCloud.lua's header.
+	-- Storm clouds (and their damage bolts) drawn last of the world-space
+	-- layer, on top of every other sprite/effect above -- see StormCloud.lua's
+	-- header.
 	for _, cloud in ipairs(self.stormClouds) do cloud:draw() end
+	self:drawStormBolts()
 
 	-- ---- Screen space (HUD) ----
 	gfx.setDrawOffset(0, 0)

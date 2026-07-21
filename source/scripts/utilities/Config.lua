@@ -161,11 +161,11 @@ Config.NO_TARGET_MARK_OFFSET = 30 -- distance (px) from the ship's center to tha
 -- cannonTimer tick and fireCannon.
 Config.AUTOFIRE_CANNON_UNLOCKED = 0     -- 0 = not installed, >0 = installed; set by the upgrade
 Config.AUTOFIRE_CANNON_DAMAGE   = 0.5     -- health removed from an enemy per cannon hit
-Config.AUTOFIRE_CANNON_DELAY    = 1.5   -- seconds between shots
+Config.AUTOFIRE_CANNON_DELAY    = 2   -- seconds between shots
 Config.AUTOFIRE_CANNON_RANGE    = Config.TARGET_RANGE / 2.5 -- max auto-target acquisition distance
 -- Seconds AUTOFIRE_CANNON_DELAY drops by per pick of the "Rapid Autocannon"
 -- upgrade (only offered once AUTOFIRE_CANNON_UNLOCKED -- see ConfigUpgrades.lua).
-Config.AUTOFIRE_CANNON_DELAY_STEP = 0.2
+Config.AUTOFIRE_CANNON_DELAY_STEP = 0.25
 
 -----------------
 -- Storm Cloud --
@@ -182,9 +182,9 @@ Config.AUTOFIRE_CANNON_DELAY_STEP = 0.2
 -- appearing always preempts both.
 Config.STORM_CLOUD_COUNT    = 0    -- number of clouds currently owned; set by the upgrade
 Config.STORM_CLOUD_SPEED    = 20   -- px/s drift speed, whether tracking an enemy/player or wandering
-Config.STORM_CLOUD_DAMAGE   = 1    -- health removed from every enemy in range, per damage tick
-Config.STORM_CLOUD_DAMAGE_INTERVAL = 1 -- seconds between damage ticks
-Config.STORM_CLOUD_RADIUS   = 40   -- px; damage-application radius, independent of the drawn image size below
+Config.STORM_CLOUD_DAMAGE   = .8    -- health removed from every enemy in range, per damage tick
+Config.STORM_CLOUD_DAMAGE_INTERVAL = 2 -- seconds between damage ticks
+Config.STORM_CLOUD_RADIUS   = 20   -- px; damage-application radius, independent of the drawn image size below
 Config.STORM_CLOUD_WIDTH    = 80   -- px; drawn width of the cloud image (source/assets/images/storm-cloud.png)
 Config.STORM_CLOUD_HEIGHT   = 44   -- px; drawn height of the cloud image
 
@@ -199,7 +199,7 @@ Config.STORM_CLOUD_SPAWN_MIN_DISTANCE = 80 -- px; minimum distance from the play
 -- WANDER_MIN/MAX_INTERVAL seconds; drifting back out past FOLLOW_DISTANCE
 -- while wandering resumes following. An enemy appearing always overrides
 -- this, see StormCloud:update.
-Config.STORM_CLOUD_FOLLOW_DISTANCE = 60 -- px; leash radius around the player for the follow/wander switch
+Config.STORM_CLOUD_FOLLOW_DISTANCE = 100 -- px; leash radius around the player for the follow/wander switch
 Config.STORM_CLOUD_WANDER_MIN_INTERVAL = 1 -- seconds; shortest time before picking a new wander heading
 Config.STORM_CLOUD_WANDER_MAX_INTERVAL = 3 -- seconds; longest time before picking a new wander heading
 
@@ -222,6 +222,18 @@ Config.STORM_CLOUD_TELEPORT_LAND_MAX = 300 -- px; farthest the teleport can land
 Config.STORM_CLOUD_FLASH_MIN_INTERVAL = 2    -- seconds; shortest gap between flashes
 Config.STORM_CLOUD_FLASH_MAX_INTERVAL = 6    -- seconds; longest gap between flashes
 Config.STORM_CLOUD_FLASH_STEP_DURATION = 0.08 -- seconds each flash step (white, then black) lasts
+
+-- Damage bolt: a jagged lightning line drawn from a cloud's center to each
+-- enemy it damages on a given tick (see GameScene:updateStormClouds/
+-- updateStormBolts/drawStormBolts). DURATION is how long the bolt stays on
+-- screen after the hit; while shown, it flashes on/off every FLASH_FRAMES
+-- frames rather than drawing solid. SEGMENTS/JITTER control the zigzag
+-- shape (see Utils.lightningBoltPoints) and WIDTH is the stroke thickness.
+Config.STORM_CLOUD_BOLT_DURATION     = 0.25 -- seconds a damage bolt stays on screen
+Config.STORM_CLOUD_BOLT_FLASH_FRAMES = 2    -- frames each on/off flash step lasts while a bolt is shown
+Config.STORM_CLOUD_BOLT_SEGMENTS     = 6    -- jagged line segments making up a bolt
+Config.STORM_CLOUD_BOLT_JITTER       = 10   -- px; max perpendicular offset of each interior segment joint
+Config.STORM_CLOUD_BOLT_WIDTH        = 2    -- stroke width (px) of the bolt line
 
 -----------
 -- Sound --
