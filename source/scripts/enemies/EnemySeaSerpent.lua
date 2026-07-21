@@ -244,43 +244,70 @@ function EnemySeaSerpent:visiblePartCount()
 end
 
 -- EnemySelectScene's preview pane (see the module comment above and
--- EnemySelectScene.lua:54) is a small fixed-size box, not the full game
--- screen -- so the static reference pose below only draws the head plus this
--- many trailing segments, not the full self.segmentCount. With a long body
--- (large SEGMENT_COUNT/SEPARATION), Ship:bodyRadius/buildBodyImage would
--- otherwise bake a huge, mostly-empty square image sized off the full tail
--- length, leaving the head off in a corner of it instead of centered in the
--- preview -- capping the pose keeps the baked image small and the head
--- visibly in frame. Only affects this static preview: the live, moving
--- :draw() below reads self.trail directly (all segmentCount of it) and never
--- calls buildBodyImage.
+-- EnemySelectScene.lua:54) is a small fixed-width box (MenuCard's descWidth,
+-- ~180px, shared with 4 lines of stat text stacked below the image -- see
+-- MenuCard.build/buildEnemyDesc), not the full game screen -- so the static
+-- reference pose below only draws the head plus PREVIEW_SEGMENT_COUNT
+-- trailing segments, AND clamps its overall size to PREVIEW_MAX_RADIUS
+-- (comparable to the other enemies' own natural preview sizes, e.g.
+-- EnemyRogueWave's LENGTH=34). Capping segment count alone isn't enough --
+-- Config.ENEMY_SEA_SERPENT_SEGMENT_RADIUS/SEPARATION/HEAD_LENGTH can each be
+-- tuned arbitrarily large on their own, and playout's box lays the image out
+-- at a fixed `width` (see buildEnemyDesc), so an oversized image gets cropped
+-- to that column instead of shrinking to fit -- reading as the preview
+-- "vanishing" when only a sliver of the head or body happens to land inside
+-- the visible column. Scaling every preview dimension down together (see
+-- previewDimensions below) keeps the whole pose comfortably inside frame
+-- instead of just moving where the cropping happens. Only affects this
+-- static preview: the live, moving :draw() below reads self.trail directly
+-- (all segmentCount of it, at the real configured size) and never calls
+-- buildBodyImage.
 local PREVIEW_SEGMENT_COUNT = 1
+local PREVIEW_MAX_RADIUS = 32
+
+-- Head/segment dimensions to use for the static preview pose -- the real
+-- self.headLength/headWidth/segmentRadius/segmentSeparation, uniformly scaled
+-- down (never up) so the pose's own bounding radius never exceeds
+-- PREVIEW_MAX_RADIUS -- see the comment above.
+---@return integer segmentCount capped to PREVIEW_SEGMENT_COUNT
+---@return number headLength
+---@return number headWidth
+---@return number segmentRadius
+---@return number segmentSeparation
+function EnemySeaSerpent:previewDimensions()
+	local n = math.min(PREVIEW_SEGMENT_COUNT, self.segmentCount)
+	local natural = math.max(self.headLength, n * self.segmentSeparation + self.segmentRadius)
+	local scale = natural > PREVIEW_MAX_RADIUS and (PREVIEW_MAX_RADIUS / natural) or 1
+	return n, self.headLength * scale, self.headWidth * scale, self.segmentRadius * scale, self.segmentSeparation * scale
+end
 
 -- Static reference pose for EnemySelectScene's preview pane (Ship:buildBodyImage
 -- bakes this once via Ship:drawBodyLocal) -- the body ellipses laid out in a
 -- straight line astern since there's no real travelled path to draw from for
--- a preview icon. Capped to PREVIEW_SEGMENT_COUNT segments -- see above.
+-- a preview icon. Sized via previewDimensions -- see above.
 ---@param cx number
 ---@param cy number
 function EnemySeaSerpent:drawBodyLocal(cx, cy)
+	local n, headLength, headWidth, segmentRadius, segmentSeparation = self:previewDimensions()
+
 	gfx.setColor(self.color)
-	for i = math.min(PREVIEW_SEGMENT_COUNT, self.segmentCount), 1, -1 do
-		local sx = cx - self.segmentSeparation * i
-		gfx.fillEllipseInRect(sx - self.segmentRadius, cy - self.segmentRadius,
-			self.segmentRadius * 2, self.segmentRadius * 2)
+	for i = n, 1, -1 do
+		local sx = cx - segmentSeparation * i
+		gfx.fillEllipseInRect(sx - segmentRadius, cy - segmentRadius, segmentRadius * 2, segmentRadius * 2)
 	end
 
-	local tipX, tipY = cx + self.headLength, cy
-	gfx.fillTriangle(tipX, tipY, cx, cy - self.headWidth, cx, cy + self.headWidth)
+	local tipX, tipY = cx + headLength, cy
+	gfx.fillTriangle(tipX, tipY, cx, cy - headWidth, cx, cy + headWidth)
 end
 
--- Bounding radius of the capped reference pose above -- see
--- Ship:bodyRadius/buildBodyImage.
+-- Bounding radius of the scaled reference pose above -- see
+-- Ship:bodyRadius/buildBodyImage. Always <= PREVIEW_MAX_RADIUS by
+-- construction (see previewDimensions).
 ---@return number
 function EnemySeaSerpent:bodyRadius()
-	local n = math.min(PREVIEW_SEGMENT_COUNT, self.segmentCount)
-	local tailReach = n * self.segmentSeparation + self.segmentRadius
-	return math.max(self.headLength, tailReach)
+	local n, headLength, _, segmentRadius, segmentSeparation = self:previewDimensions()
+	local tailReach = n * segmentSeparation + segmentRadius
+	return math.max(headLength, tailReach)
 end
 
 -- Live per-frame draw. Unlike other Enemy subclasses this never goes through
