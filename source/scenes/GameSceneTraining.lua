@@ -1,7 +1,7 @@
 -- GameSceneTraining.lua
 -- A sandbox for testing ship/wind/combat feel: no automatic spawning or
--- level progression. Press A to spawn one enemy, B to return to the title
--- screen.
+-- level progression. Press A to spawn one enemy, B to bring up a "return to
+-- title?" confirmation (A confirms, B cancels back into training).
 
 import "scripts/utilities/Config"
 import "scenes/GameScene"
@@ -29,10 +29,20 @@ local testUpgradeMenuItem = nil
 GameSceneTraining.inputHandler = GameScene.buildSharedInputHandler(GameScene.current)
 GameSceneTraining.inputHandler.AButtonDown = function()
 	local s = GameScene.current()
-	if s then s:spawnEnemy(GameSceneTraining.selectedEnemyType) end
+	if not s then return end
+	if s.confirmingQuit then
+		Noble.transition(TitleScene)
+		return
+	end
+	s:spawnEnemy(GameSceneTraining.selectedEnemyType)
 end
+-- First press brings up the "return to title?" dialog (drawn by
+-- drawConfirmQuit below); a second B cancels it and returns to the sandbox
+-- without spawning an enemy -- see AButtonDown above for the confirm side.
 GameSceneTraining.inputHandler.BButtonDown = function()
-	if GameScene.current() then Noble.transition(TitleScene) end
+	local s = GameScene.current()
+	if not s then return end
+	s.confirmingQuit = not s.confirmingQuit
 end
 
 function GameSceneTraining:start()
@@ -118,4 +128,18 @@ end
 function GameSceneTraining:onPlayerHealthDepleted()
 	self.ship.health = Config.SHIP_MAX_HEALTH
 	self.ship.alive = true
+end
+
+-- Drawn (in place of the frozen gameplay) while self.confirmingQuit is true,
+-- see BButtonDown above and GameScene's confirmingQuit field/drawConfirmQuit
+-- hook. Same boxed-text look as GameScene:drawGameOver, just shorter.
+function GameSceneTraining:drawConfirmQuit()
+	gfx.setColor(gfx.kColorBlack)
+	gfx.fillRect(60, 90, Config.SCREEN_W - 120, 60)
+	gfx.setColor(gfx.kColorWhite)
+	gfx.drawRect(62, 92, Config.SCREEN_W - 124, 56)
+	gfx.setImageDrawMode(gfx.kDrawModeFillWhite)
+	gfx.drawTextAligned("Return to title?", Config.SCREEN_W / 2, 104, kTextAlignment.center)
+	gfx.drawTextAligned("Ⓐ yes   Ⓑ no", Config.SCREEN_W / 2, 124, kTextAlignment.center)
+	gfx.setImageDrawMode(gfx.kDrawModeCopy)
 end

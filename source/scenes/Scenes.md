@@ -154,10 +154,12 @@ repo's `CLAUDE.md` before adding another system-menu item anywhere).
   cancelling).
 - **Controls:** shared steer/trim/charge bindings (see `GameSceneMain` above);
   A spawns one enemy (`GameSceneTraining.selectedEnemyType`, or random if unset);
-  B returns to `TitleScene`.
+  B brings up a "Return to title?" confirmation (freezes gameplay via
+  `confirmingQuit`, drawn by `drawConfirmQuit`) — A confirms and returns to
+  `TitleScene`, B cancels back into the sandbox.
 - **sceneProperties read:** none.
 - **Transitions out:**
-  - B → `Noble.transition(TitleScene)`
+  - B, then A to confirm → `Noble.transition(TitleScene)`
   - System menu "Select Enemy" → `Noble.transition(EnemySelectScene)`
   - System menu "Test Upgrade" → `Noble.transition(UpgradeTestScene)`
 - **Notable state:** `GameSceneTraining.selectedEnemyType` is a *class-level*

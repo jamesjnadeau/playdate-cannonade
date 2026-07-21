@@ -401,9 +401,30 @@ function TestSceneFlow:testGameSceneTrainingSpawnAndReturnToTitle()
 	Noble.Input.fire("AButtonDown") -- spawn
 	lu.assertEquals(#scene.enemies, 1)
 
-	Noble.Input.fire("BButtonDown")
+	Noble.Input.fire("BButtonDown") -- opens "return to title?" confirmation
+	lu.assertEquals(currentClassName(), "GameSceneTraining")
+	lu.assertTrue(scene.confirmingQuit)
+
+	Noble.Input.fire("AButtonDown") -- confirm
 	lu.assertEquals(currentClassName(), "TitleScene")
 	lu.assertEquals(#playdate.getSystemMenu():getMenuItems(), 0) -- GameSceneTraining:finish() cleared it
+end
+
+function TestSceneFlow:testGameSceneTrainingQuitConfirmationCancelStaysInTraining()
+	Noble.Input.fire("AButtonDown") -- Title -> GameSceneTraining
+	local scene = Noble.currentScene()
+
+	Noble.Input.fire("BButtonDown") -- opens "return to title?" confirmation
+	lu.assertTrue(scene.confirmingQuit)
+
+	Noble.Input.fire("BButtonDown") -- cancel
+	lu.assertEquals(currentClassName(), "GameSceneTraining")
+	lu.assertFalse(scene.confirmingQuit)
+
+	-- Confirming was frozen: A now spawns again rather than quitting.
+	lu.assertEquals(#scene.enemies, 0)
+	Noble.Input.fire("AButtonDown")
+	lu.assertEquals(#scene.enemies, 1)
 end
 
 function TestSceneFlow:testGameSceneTrainingEnemySelectConfirmSetsForcedType()

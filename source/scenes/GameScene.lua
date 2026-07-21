@@ -30,6 +30,7 @@ local gfx <const> = playdate.graphics
 ---@field elapsed number
 ---@field score number
 ---@field gameOver boolean
+---@field confirmingQuit? boolean set by GameSceneTraining while its B-button quit-confirmation dialog is up; nil/false elsewhere
 ---@field level? number set by GameSceneMain; nil elsewhere, treated as 1
 ---@field windSpeedChangeRateMin number
 ---@field windSpeedChangeRateMax number
@@ -199,7 +200,7 @@ function GameScene.buildSharedInputHandler(getScene)
 		-- Crank steers the helm.
 		cranked = function(change, _)
 			local s = getScene()
-			if s and not s.gameOver then s.ship:steer(change) end
+			if s and not s.gameOver and not s.confirmingQuit then s.ship:steer(change) end
 		end,
 		-- Up/Down set a persistent sail-trim flag; the tick applies it each
 		-- frame. Up lets the sail out, Down trims it in.
@@ -222,7 +223,7 @@ function GameScene.buildSharedInputHandler(getScene)
 		-- Left/Right begin charging a broadside; release fires.
 		leftButtonDown = function()
 			local s = getScene()
-			if s and not s.gameOver then s:beginCharge("port") end
+			if s and not s.gameOver and not s.confirmingQuit then s:beginCharge("port") end
 		end,
 		leftButtonUp = function()
 			local s = getScene()
@@ -230,7 +231,7 @@ function GameScene.buildSharedInputHandler(getScene)
 		end,
 		rightButtonDown = function()
 			local s = getScene()
-			if s and not s.gameOver then s:beginCharge("starboard") end
+			if s and not s.gameOver and not s.confirmingQuit then s:beginCharge("starboard") end
 		end,
 		rightButtonUp = function()
 			local s = getScene()
@@ -527,7 +528,7 @@ end
 function GameScene:update()
 	GameScene.super.update(self)
 
-	if not self.gameOver then
+	if not self.gameOver and not self.confirmingQuit then
 		self:tickGame()
 	end
 
@@ -722,6 +723,7 @@ function GameScene:render()
 	self:drawModeStatus()
 	self:drawWindIndicator()
 	if self.gameOver then self:drawGameOver() end
+	if self.confirmingQuit then self:drawConfirmQuit() end
 end
 
 -- Integer hash (mix-then-fold) used to pick each wavelet's segment count.
@@ -1116,3 +1118,10 @@ end
 function GameScene:gameOverPrompt()
 	return "Ⓐ to set sail again"
 end
+
+-- Hook for a scene that wants a confirmation dialog drawn while
+-- self.confirmingQuit is true (see the field's doc comment above and
+-- buildSharedInputHandler's gating on it); the base scene never sets that
+-- field, so this never fires here. GameSceneTraining overrides it to draw
+-- its "return to title?" prompt.
+function GameScene:drawConfirmQuit() end
