@@ -153,4 +153,50 @@ Config.ENEMY_ROGUEWAVE_MIN_LEVEL = 7  -- unlocked starting this level -- see Con
 -- health bar out by the difference to clear it regardless of heading.
 Config.ENEMY_ROGUEWAVE_HEALTH_BAR_OFFSET = Config.ENEMY_ROGUEWAVE_LENGTH - Config.ENEMY_ROGUEWAVE_RADIUS
 
+---------------------------
+-- Enemy: Sea Serpent --
+---------------------------
+-- A long zig-zagging Enemy variant (see EnemySeaSerpent.lua): swims straight
+-- for LEG_DISTANCE px, pivots by ZIGZAG_ANGLE degrees off the line to its
+-- target (alternating left/right each time), then swims straight again,
+-- tracing a zig-zag path toward the player instead of a direct homing curve.
+-- It also cycles between surfaced and submerged: fully visible for
+-- SURFACE_TIME seconds, hidden for DIVE_TIME, with a REVEAL_TIME transition
+-- on each side where the head triangle appears/leads first and the trailing
+-- body ellipses reveal (or hide) one at a time behind it -- see
+-- EnemySeaSerpent:updateSurfaceCycle/visiblePartCount. Movement and collision
+-- are unaffected by this -- it can still be rammed while submerged.
+Config.ENEMY_SEA_SERPENT_SPEED = math.floor(Config.ENEMY_SPEED * 0.9)  -- pixels / second, a bit slower than the base enemy -- it covers ground via its long legs, not raw speed
+Config.ENEMY_SEA_SERPENT_ACCEL = Config.ENEMY_ACCEL
+Config.ENEMY_SEA_SERPENT_TURN_RATE = 140  -- degrees / second while pivoting between zig-zag legs
+Config.ENEMY_SEA_SERPENT_TURN_TIME = 0.4  -- seconds allotted to each pivot -- an upper bound like ENEMY_ROGUEWAVE_TURN_TIME, not a wait-until-exact target
+Config.ENEMY_SEA_SERPENT_LEG_DISTANCE = 90  -- px traveled straight before the next pivot
+Config.ENEMY_SEA_SERPENT_ZIGZAG_ANGLE = 35  -- degrees each leg's heading is offset from the direct line to the target, alternating sign every leg
+Config.ENEMY_SEA_SERPENT_RADIUS = 10  -- collision radius, centered on the head
+Config.ENEMY_SEA_SERPENT_HEALTH = 3
+Config.ENEMY_SEA_SERPENT_DAMAGE = math.floor(Config.ENEMY_DAMAGE * 1.5)  -- a long ramming body hits harder than a steady-homing enemy
+Config.ENEMY_SEA_SERPENT_WIND_MULTIPLIER = Config.ENEMY_WIND_MULTIPLIER
+Config.ENEMY_SEA_SERPENT_COLOR = gfx.kColorBlack
+Config.ENEMY_SEA_SERPENT_MIN_LEVEL = 2  -- unlocked starting this level -- see Config.ENEMY_MIN_LEVEL
+-- Head triangle: base (width HEAD_WIDTH * 2) centered on the head position,
+-- tip HEAD_LENGTH ahead of it along the heading.
+Config.ENEMY_SEA_SERPENT_HEAD_LENGTH = 14
+Config.ENEMY_SEA_SERPENT_HEAD_WIDTH = 8
+-- Trailing body: configurable count/size/spacing of the black ellipses that
+-- follow the head along its actual travelled path (see
+-- EnemySeaSerpent:updateTrail) -- not baked into the rotated body image like
+-- other enemies' hulls, since each segment's position is independent history
+-- rather than a rigid shape.
+Config.ENEMY_SEA_SERPENT_SEGMENT_COUNT = 6
+Config.ENEMY_SEA_SERPENT_SEGMENT_RADIUS = 7  -- px radius of each body ellipse
+Config.ENEMY_SEA_SERPENT_SEGMENT_SEPARATION = 12  -- px between consecutive segment centers along the path
+-- Surface/dive cycle timing (seconds) -- see EnemySeaSerpent:updateSurfaceCycle.
+Config.ENEMY_SEA_SERPENT_SURFACE_TIME = 4.0  -- fully visible
+Config.ENEMY_SEA_SERPENT_DIVE_TIME = 2.5  -- fully hidden
+Config.ENEMY_SEA_SERPENT_REVEAL_TIME = 0.8  -- transition spent revealing (surfacing) or hiding (diving)
+-- Nothing reaches past the collision radius in the direction that matters for
+-- the health bar (only the trailing body extends further, and that's behind
+-- the head, not below it) -- see Enemy.healthBarOffset.
+Config.ENEMY_SEA_SERPENT_HEALTH_BAR_OFFSET = 0
+
 return Config

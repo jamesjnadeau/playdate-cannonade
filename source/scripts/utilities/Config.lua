@@ -455,7 +455,7 @@ Config.INSTRUCTIONS_TEXT_BOX_MAX_WIDTH    = 220 -- px each line wraps at -- the 
 -- item/row, shared by every crank-navigable menu (TitleScene, SettingsScene,
 -- EnemySelectScene, UpgradeSelectScene, UpgradeTestScene, TuningScene) so
 -- crank feel is consistent across the whole game.
-Config.MENU_CRANK_DEGREES_PER_ITEM = 20
+Config.MENU_CRANK_DEGREES_PER_ITEM = 60
 
 ----------
 -- Boot --
