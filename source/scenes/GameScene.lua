@@ -748,10 +748,13 @@ function GameScene:tickGame()
 end
 
 -- Called when the player's health drops to 0 or below. Default behavior ends
--- the run; GameSceneTraining overrides this to reset health and keep the
--- sandbox running instead of kicking the tester back to the title screen.
+-- the run and strips any upgrades picked this run, so the next run starts
+-- fresh; GameSceneTraining overrides this to reset health and keep the
+-- sandbox running (upgrades intentionally stay stacked there) instead of
+-- kicking the tester back to the title screen.
 function GameScene:onPlayerHealthDepleted()
 	self.gameOver = true
+	Config.resetUpgrades()
 	Sound.playPlayerDeath()
 end
 

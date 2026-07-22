@@ -65,11 +65,11 @@ Config.WAKE_WIND_INFLUENCE = 0.2
 -- overwrite the whole table or just a field to get its own look.
 Config.EXPLOSION = {
 	mode     = Particles.modes.DECAY,
-	decay    = 0.5,
+	decay    = 0.25,
 	size     = { 2, 5 },
 	speed    = { 2, 9 },      -- pdParticles speed is per-frame
 	spread   = { 0, 100 },
-	lifespan = { 2, 3 },
+	lifespan = { 1, 3 },
 	color    = gfx.kColorBlack,
 	count    = 10,
 	maxAge   = 120,           -- frames; safety net if particles never fully decay

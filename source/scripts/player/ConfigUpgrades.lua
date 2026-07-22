@@ -152,6 +152,26 @@ Config.UPGRADES = {
 	},
 }
 
+-- Snapshot of each upgrade's Config field value as of this file's first load
+-- (before any upgrade has ever been applied), so Config.resetUpgrades can
+-- restore a fresh-game baseline after the player dies. Keyed by configKey
+-- rather than upgrade id since that's what applyUpgrade actually mutates.
+local upgradeBaselines = {}
+for _, upgrade in ipairs(Config.UPGRADES) do
+	if upgradeBaselines[upgrade.configKey] == nil then
+		upgradeBaselines[upgrade.configKey] = Config[upgrade.configKey]
+	end
+end
+
+-- Restores every Config field touched by Config.UPGRADES back to its
+-- fresh-game baseline -- called on player death so a new run doesn't inherit
+-- the previous run's upgrades. See GameScene:onPlayerHealthDepleted.
+function Config.resetUpgrades()
+	for configKey, baseline in pairs(upgradeBaselines) do
+		Config[configKey] = baseline
+	end
+end
+
 -- Computes the before/after values `upgrade` would produce without touching
 -- Config, so a caller (UpgradeSelectScene's confirm screen) can preview a
 -- "was -> now" summary before committing to it.

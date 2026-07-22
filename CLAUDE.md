@@ -89,6 +89,27 @@ This is editor-only tooling — plain comments, no effect on `pdc`/the compiled
   entries have a real shape, so it defines `---@class Config.Upgrade` and
   types `Config.applyUpgrade` against it.
 
+## Upgrade storage: mutates the global `Config` table directly
+
+There's no separate "owned upgrades" list or per-player upgrade state.
+`Config.applyUpgrade` (`source/scripts/player/ConfigUpgrades.lua`) mutates the
+shared global `Config` table in place — e.g. picking "Twin Tridents" just
+increments `Config.TRIDENT_COUNT`. Since `Config` is a module-level table
+imported once from `main.lua` and never re-executed, this state is
+process-global: it persists across every in-app scene transition (including
+level-complete → upgrade-pick → next level, and previously, a game-over
+restart) but not an actual app relaunch. Nothing here uses
+`playdate.datastore`.
+
+Because of that, `GameScene:onPlayerHealthDepleted` (the default game-over
+handler; `GameSceneTraining` overrides it and deliberately skips this) calls
+`Config.resetUpgrades()` to restore every `Config.UPGRADES`-touched field back
+to the baseline value it had before any upgrade was ever applied (snapshotted
+once at `ConfigUpgrades.lua` load time), so a fresh run after death doesn't
+inherit the previous run's upgrades. If you add a new upgrade whose
+`configKey` needs different reset semantics, do it in
+`Config.resetUpgrades`, not by special-casing `onPlayerHealthDepleted`.
+
 ## Playdate system menu: 3-item cap
 
 `playdate.getSystemMenu()` accepts at most **3 custom items total**, across
