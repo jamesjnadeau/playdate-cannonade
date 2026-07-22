@@ -705,10 +705,12 @@ function GameScene:tickGame()
 	-- Enemies chase; check ramming. Ramming only damages the player -- an
 	-- enemy is never defeated by hull contact, only by a tridentball/Storm
 	-- Cloud hit (see the tridentball loop below and updateStormClouds above).
+	-- Enemy:collidesWithShip (overridden by EnemySeaSerpent to also cover its
+	-- trailing body, not just its head) replaces a raw Utils.dist check here.
 	local ship = self.ship
 	for _, e in ipairs(self.enemies) do
 		e:update(ship.x, ship.y, self.windDirection, self.windSpeed)
-		if Utils.dist(e.x, e.y, ship.x, ship.y) < (Config.SHIP_COLLIDE_RADIUS + e.radius) then
+		if e:collidesWithShip(ship.x, ship.y, Config.SHIP_COLLIDE_RADIUS) then
 			if ship:hit(e.damage) then
 				Sound.playPlayerHurt()
 				if ship.health <= 0 then

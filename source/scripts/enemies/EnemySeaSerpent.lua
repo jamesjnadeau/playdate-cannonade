@@ -192,6 +192,29 @@ function EnemySeaSerpent:segmentRadiusAt(i)
 	return self.segmentRadius * scale
 end
 
+-- The trailing body is a real hazard, not just decoration -- touching any
+-- segment rams the player same as touching the head (see Enemy:collidesWithShip,
+-- called from GameScene's ramming loop). Only the head's own circle
+-- (self.radius, checked by the super call below) is ever vulnerable to
+-- tridentball/Storm Cloud damage -- GameScene's damage-dealing loops key off
+-- e.x/e.y/e.radius directly and never call this method, so that asymmetry
+-- falls out without any change there.
+---@param shipX number
+---@param shipY number
+---@param shipRadius number
+---@return boolean
+function EnemySeaSerpent:collidesWithShip(shipX, shipY, shipRadius)
+	if EnemySeaSerpent.super.collidesWithShip(self, shipX, shipY, shipRadius) then
+		return true
+	end
+	for i, p in ipairs(self.trail) do
+		if Utils.dist(p.x, p.y, shipX, shipY) < (shipRadius + self:segmentRadiusAt(i)) then
+			return true
+		end
+	end
+	return false
+end
+
 -- EnemySelectScene's preview pane (see the module comment above and
 -- EnemySelectScene.lua:54) is a small fixed-width box (MenuCard's descWidth,
 -- ~180px, shared with 4 lines of stat text stacked below the image -- see

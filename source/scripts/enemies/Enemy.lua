@@ -149,6 +149,18 @@ function Enemy:updateLeash(shipX, shipY, dt)
 	end
 end
 
+-- Ramming hit test against the player ship, called from GameScene's ramming
+-- loop. Default is a plain circle-circle check against self.radius; overridden
+-- by EnemySeaSerpent so its trailing body (not just its head) can also injure
+-- the player on contact -- see EnemySeaSerpent:collidesWithShip.
+---@param shipX number
+---@param shipY number
+---@param shipRadius number
+---@return boolean
+function Enemy:collidesWithShip(shipX, shipY, shipRadius)
+	return Utils.dist(self.x, self.y, shipX, shipY) < (shipRadius + self.radius)
+end
+
 -- Bakes the white bow "eye" dot into the cached body image alongside the
 -- hull -- see Ship:drawBodyLocal/buildBodyImage.
 ---@param cx number
