@@ -161,6 +161,15 @@ function Enemy:collidesWithShip(shipX, shipY, shipRadius)
 	return Utils.dist(self.x, self.y, shipX, shipY) < (shipRadius + self.radius)
 end
 
+-- Hook for enemy-specific side effects when a ram actually lands, called
+-- from GameScene's ramming loop right after a successful Ship:hit (i.e. only
+-- while the player isn't already invulnerable, not on every frame the two
+-- stay overlapped). Default no-op; overridden by EnemyRogueWave to shove the
+-- player in the direction it was charging -- see EnemyRogueWave:onRamHit.
+---@param ship Player
+function Enemy:onRamHit(ship)
+end
+
 -- Bakes the white bow "eye" dot into the cached body image alongside the
 -- hull -- see Ship:drawBodyLocal/buildBodyImage.
 ---@param cx number

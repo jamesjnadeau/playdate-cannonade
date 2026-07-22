@@ -713,6 +713,7 @@ function GameScene:tickGame()
 		if e:collidesWithShip(ship.x, ship.y, Config.SHIP_COLLIDE_RADIUS) then
 			if ship:hit(e.damage) then
 				Sound.playPlayerHurt()
+				e:onRamHit(ship)
 				if ship.health <= 0 then
 					self:onPlayerHealthDepleted()
 				end

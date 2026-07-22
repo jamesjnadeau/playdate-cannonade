@@ -102,6 +102,14 @@ Config.SHIP_WATER_FRICTION = 0.05
 -- this fraction of every pixel/second it's over the max, on top of the
 -- regular water friction above -- see Ship:updateSpeed.
 Config.SHIP_OVERSPEED_FRICTION = 0.025
+-- Ramming knockback (see Player:applyKnockback/updateKnockback): shared
+-- tuning for the shove itself -- how hard it can ramp up to speed and how
+-- fast that speed bleeds off afterward -- so any future knock-capable enemy
+-- reuses the same feel. How FAR any specific enemy's knock carries the
+-- player is that enemy's own config (e.g. ENEMY_ROGUEWAVE_KNOCKBACK_DISTANCE
+-- in ConfigEnemy.lua), not here.
+Config.KNOCKBACK_ACCEL = 4000     -- px/second^2 during the initial "impact" ramp -- far above SHIP_ACCEL so it reads as a jolt, not a normal acceleration
+Config.KNOCKBACK_FRICTION = 3     -- fraction of knock speed bled off per second during "decay" -- far above SHIP_WATER_FRICTION so it reads as a shove settling out, not a lasting push
 -- wake
 Config.SHIP_WAKE_SIZE_MIN = 1
 Config.SHIP_WAKE_SIZE_MAX = 2

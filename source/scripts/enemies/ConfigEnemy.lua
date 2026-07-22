@@ -132,7 +132,7 @@ Config.ENEMY_ROGUEWAVE_CHARGE_LENGTH = 1.0  -- seconds spent charging before bra
 Config.ENEMY_ROGUEWAVE_TURN_TIME    = 0.6   -- seconds spent stopped-and-turning before charging again
 Config.ENEMY_ROGUEWAVE_TURN_RATE    = 220   -- degrees / second while stopped -- fast, since this is the only time it can turn at all
 Config.ENEMY_ROGUEWAVE_LENGTH = 34  -- half-length of the outer ellipse, elongated compared to the base enemy's hull
-Config.ENEMY_ROGUEWAVE_BEAM   = 10  -- half-width of the outer ellipse
+Config.ENEMY_ROGUEWAVE_BEAM   = 20  -- half-width of the outer ellipse -- also the wave's thickness along its direction of travel, since drawBodyLocal is rotated 90 degrees from LENGTH/BEAM's bow-stern axis (see EnemyRogueWave:drawBodyLocal)
 -- The crescent look (see EnemyRogueWave:drawBodyLocal) comes from cutting a
 -- second, smaller ellipse out of the outer one, shifted toward the stern by
 -- HOLLOW_OFFSET. HOLLOW_SCALE and HOLLOW_OFFSET are chosen so the cut
@@ -145,6 +145,11 @@ Config.ENEMY_ROGUEWAVE_RADIUS = 22  -- collision radius -- smaller than LENGTH s
 Config.ENEMY_ROGUEWAVE_HEALTH = 2
 Config.ENEMY_ROGUEWAVE_DAMAGE = Config.ENEMY_DAMAGE * 1.5  -- a charging wave hits harder than a steady-homing enemy
 Config.ENEMY_ROGUEWAVE_WIND_MULTIPLIER = Config.ENEMY_WIND_MULTIPLIER
+-- How far (px) a successful ram shoves the player in the direction the wave
+-- was moving -- see Enemy:onRamHit/EnemyRogueWave:onRamHit and
+-- Player:applyKnockback, which derives the actual push speed from this
+-- distance plus the shared Config.KNOCKBACK_ACCEL/FRICTION tuning.
+Config.ENEMY_ROGUEWAVE_KNOCKBACK_DISTANCE = 120
 Config.ENEMY_ROGUEWAVE_COLOR         = gfx.kColorBlack
 Config.ENEMY_ROGUEWAVE_OUTLINE_COLOR = gfx.kColorWhite
 Config.ENEMY_ROGUEWAVE_MIN_LEVEL = 7  -- unlocked starting this level -- see Config.ENEMY_MIN_LEVEL

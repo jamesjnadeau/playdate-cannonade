@@ -17,6 +17,10 @@ local gfx <const> = playdate.graphics
 ---@field wakeStarboard table ParticleCircle
 ---@field ammo number tridents currently carried, see Player:consumeAmmo/updateAmmo
 ---@field ammoRegenTimer number seconds until the next regen tick, see Player:updateAmmo
+---@field knockState? string "impact" | "decay" | nil, see Player:applyKnockback/updateKnockback
+---@field knockHeading number degrees, direction of an in-progress ramming knockback
+---@field knockSpeed number px/s, current knockback speed, added on top of normal sailing movement
+---@field knockTargetSpeed number px/s, the peak knockSpeed the current knockback is ramping toward
 Player = class("Player").extends(Ship) or Player
 
 ---@param x number
@@ -35,6 +39,11 @@ function Player:init(x, y)
 	self.sailAngularVelocity = 0
 	self.ammo = Config.AMMO_START
 	self.ammoRegenTimer = Config.AMMO_REGEN_INTERVAL
+
+	self.knockState = nil
+	self.knockHeading = 0
+	self.knockSpeed = 0
+	self.knockTargetSpeed = 0
 
 	-- Hull Setup
 	local L, B = Config.SHIP_LENGTH, Config.SHIP_BEAM
@@ -139,6 +148,8 @@ function Player:update(windDirection, windSpeed)
 	self.x = self.x + hx * self.speed * dt
 	self.y = self.y + hy * self.speed * dt
 
+	self:updateKnockback(dt)
+
 	if self.speed > 8 then
 		local back = Utils.wrapDeg(self.heading + 180)
 		local center = math.floor(Utils.wrapDeg(back
@@ -169,6 +180,53 @@ function Player:hit(damage)
 	Player.super.hit(self, damage)
 	self.invuln = 1.0
 	return true
+end
+
+-- Starts (or restarts) a ramming knockback in `heading` -- e.g. a charging
+-- EnemyRogueWave's own heading at the moment of impact (see
+-- EnemyRogueWave:onRamHit) -- carrying the player roughly `distance` px
+-- before friction bleeds it to a stop. knockTargetSpeed is derived from
+-- distance rather than taken directly, so callers configure how FAR the
+-- shove goes, not a raw speed: Config.KNOCKBACK_FRICTION bleeds off a fixed
+-- fraction of knockSpeed per second (see updateKnockback), and the integral
+-- of an exponentially-decaying speed is peakSpeed / frictionRate, so
+-- distance * frictionRate solves for the peak that produces that distance.
+-- The impact ramp in updateKnockback reaches that peak fast enough for its
+-- own travel to be negligible next to the decay tail.
+---@param heading number degrees
+---@param distance number px
+function Player:applyKnockback(heading, distance)
+	self.knockHeading = heading
+	self.knockTargetSpeed = distance * Config.KNOCKBACK_FRICTION
+	self.knockState = "impact"
+end
+
+-- Drives an in-progress ramming knockback (see applyKnockback), applied on
+-- top of the ship's own sailing movement each frame: a short "impact" phase
+-- rockets knockSpeed up to knockTargetSpeed at Config.KNOCKBACK_ACCEL (the
+-- "accelerate greatly" jolt), then "decay" bleeds it back toward 0 via
+-- Config.KNOCKBACK_FRICTION -- the same proportional-friction shape as
+-- Ship:updateSpeed's water drag -- so the shove settles out smoothly instead
+-- of snapping to a stop.
+---@param dt number
+function Player:updateKnockback(dt)
+	if self.knockState == "impact" then
+		self.knockSpeed = math.min(self.knockTargetSpeed, self.knockSpeed + Config.KNOCKBACK_ACCEL * dt)
+		if self.knockSpeed >= self.knockTargetSpeed then
+			self.knockState = "decay"
+		end
+	elseif self.knockState == "decay" then
+		self.knockSpeed = math.max(0, self.knockSpeed - self.knockSpeed * Config.KNOCKBACK_FRICTION * dt)
+		if self.knockSpeed <= 0 then
+			self.knockState = nil
+		end
+	end
+
+	if self.knockSpeed > 0 then
+		local kx, ky = Utils.heading(self.knockHeading)
+		self.x = self.x + kx * self.knockSpeed * dt
+		self.y = self.y + ky * self.knockSpeed * dt
+	end
 end
 
 -- Regenerates ammo over time, independent of firing (see consumeAmmo -- it
