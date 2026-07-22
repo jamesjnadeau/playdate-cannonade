@@ -128,11 +128,11 @@ Config.ENEMY_ROGUEWAVE_CHARGE_SPEED = math.floor(Config.ENEMY_SPEED * 2.0)  -- p
 Config.ENEMY_ROGUEWAVE_ACCEL       = math.floor(Config.ENEMY_ACCEL * 2.5)  -- pixels / second^2 easing up to CHARGE_SPEED
 Config.ENEMY_ROGUEWAVE_STOP_ACCEL  = Config.ENEMY_ROGUEWAVE_ACCEL * 2      -- brakes harder than it winds up, so the stop reads as a deliberate dig-in
 Config.ENEMY_ROGUEWAVE_STOP_SPEED_THRESHOLD = 5  -- px/second below which "stopping" counts as fully stopped and turning can begin
-Config.ENEMY_ROGUEWAVE_CHARGE_LENGTH = 1.0  -- seconds spent charging before braking to a stop
-Config.ENEMY_ROGUEWAVE_TURN_TIME    = 0.6   -- seconds spent stopped-and-turning before charging again
-Config.ENEMY_ROGUEWAVE_TURN_RATE    = 220   -- degrees / second while stopped -- fast, since this is the only time it can turn at all
+Config.ENEMY_ROGUEWAVE_CHARGE_LENGTH = 3.0  -- seconds spent charging before braking to a stop
+Config.ENEMY_ROGUEWAVE_TURN_TIME    = 1.2   -- seconds spent stopped-and-turning before charging again
+Config.ENEMY_ROGUEWAVE_TURN_RATE    = 190   -- degrees / second while stopped -- fast, since this is the only time it can turn at all
 Config.ENEMY_ROGUEWAVE_LENGTH = 34  -- half-length of the outer ellipse, elongated compared to the base enemy's hull
-Config.ENEMY_ROGUEWAVE_BEAM   = 20  -- half-width of the outer ellipse -- also the wave's thickness along its direction of travel, since drawBodyLocal is rotated 90 degrees from LENGTH/BEAM's bow-stern axis (see EnemyRogueWave:drawBodyLocal)
+Config.ENEMY_ROGUEWAVE_BEAM   = 20  -- half-width of the outer ellipse, perpendicular to its direction of travel -- LENGTH runs along the bow-stern axis (see EnemyRogueWave:drawBodyLocal)
 -- The crescent look (see EnemyRogueWave:drawBodyLocal) comes from cutting a
 -- second, smaller ellipse out of the outer one, shifted toward the stern by
 -- HOLLOW_OFFSET. HOLLOW_SCALE and HOLLOW_OFFSET are chosen so the cut

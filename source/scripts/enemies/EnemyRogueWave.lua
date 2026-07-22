@@ -12,10 +12,10 @@
 --
 -- Drawn as an elongated crescent (see EnemyRogueWave:drawBodyLocal) rather
 -- than a hull polygon: a filled outer ellipse with a second ellipse cut out
--- of it (gfx.kColorClear), rotated 90 degrees clockwise from LENGTH/BEAM's
--- bow-stern axis so the crescent reads broadside to its direction of
--- travel, like a real wave's crest, with its "mouth" curling toward one
--- side. All tuning lives in Config.ENEMY_ROGUEWAVE_* (see ConfigEnemy.lua).
+-- of it (gfx.kColorClear), LENGTH running along the bow-stern axis with the
+-- hollow cut offset toward the stern, so the crescent's open "mouth" faces
+-- backward, opposite its direction of travel. All tuning lives in
+-- Config.ENEMY_ROGUEWAVE_* (see ConfigEnemy.lua).
 --
 -- A successful ram also shoves the player in the direction the wave was
 -- moving at the moment of impact (see EnemyRogueWave:onRamHit and
@@ -160,35 +160,33 @@ end
 -- frame: a filled outer ellipse (the wave's outer curl) with a second,
 -- smaller ellipse cleared out of it (gfx.kColorClear -- see the Playdate SDK
 -- note that drawing with kColorClear erases pixels back to transparent
--- rather than painting them). The whole crescent is rotated 90 degrees
--- clockwise from LENGTH/BEAM's bow-stern axis: LENGTH (the long axis) runs
--- along local y (broadside to the direction of travel, like a real wave's
--- crest) instead of local x, and the hollow cut is offset along -y instead
--- of -x. That leaves a solid crescent whose thick "belly" leads the charge
--- and whose open mouth curls toward one side (local -y, i.e. heading - 90)
--- rather than the stern. No hull polygon and no bow eye dot (see
--- Enemy:drawBodyLocal) -- a wave doesn't have a face.
+-- rather than painting them). LENGTH (the long axis) runs along local x,
+-- the bow-stern axis, with the hollow cut offset along -x (toward the
+-- stern). That leaves a solid crescent whose thick "belly" leads the charge
+-- and whose open mouth faces the stern, opposite the direction of travel.
+-- No hull polygon and no bow eye dot (see Enemy:drawBodyLocal) -- a wave
+-- doesn't have a face.
 ---@param cx number
 ---@param cy number
 function EnemyRogueWave:drawBodyLocal(cx, cy)
 	local a, b = Config.ENEMY_ROGUEWAVE_LENGTH, Config.ENEMY_ROGUEWAVE_BEAM
 
 	gfx.setColor(self.color)
-	gfx.fillEllipseInRect(cx - b, cy - a, b * 2, a * 2)
+	gfx.fillEllipseInRect(cx - a, cy - b, a * 2, b * 2)
 	if self.outlineColor then
 		gfx.setColor(self.outlineColor)
 		gfx.setLineWidth(2)
-		gfx.drawEllipseInRect(cx - b, cy - a, b * 2, a * 2)
+		gfx.drawEllipseInRect(cx - a, cy - b, a * 2, b * 2)
 	end
 
 	local ia, ib = a * Config.ENEMY_ROGUEWAVE_HOLLOW_SCALE, b * Config.ENEMY_ROGUEWAVE_HOLLOW_SCALE
-	local hy = cy - Config.ENEMY_ROGUEWAVE_HOLLOW_OFFSET
+	local hx = cx - Config.ENEMY_ROGUEWAVE_HOLLOW_OFFSET
 	gfx.setColor(gfx.kColorClear)
-	gfx.fillEllipseInRect(cx - ib, hy - ia, ib * 2, ia * 2)
+	gfx.fillEllipseInRect(hx - ia, cy - ib, ia * 2, ib * 2)
 	if self.outlineColor then
 		gfx.setColor(self.outlineColor)
 		gfx.setLineWidth(2)
-		gfx.drawEllipseInRect(cx - ib, hy - ia, ib * 2, ia * 2)
+		gfx.drawEllipseInRect(hx - ia, cy - ib, ia * 2, ib * 2)
 	end
 end
 
