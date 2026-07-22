@@ -22,8 +22,8 @@
 -- as a smoothly narrowing tail rather than uniform dots appearing one by one.
 -- All tuning lives in Config.ENEMY_SEA_SERPENT_* (see ConfigEnemy.lua).
 
-import "scripts/utilities/Config"
-import "scripts/enemies/ConfigEnemy"
+import "scripts/config/Config"
+import "scripts/config/ConfigEnemy"
 import "scripts/utilities/Utils"
 import "scripts/enemies/Enemy"
 

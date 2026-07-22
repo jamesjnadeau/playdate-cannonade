@@ -115,4 +115,4 @@ If the `pd-rs/get-playdate-sdk@0.5.0` pin ever fails, try `@0.4` or `@latest`.
 ## Tuning
 
 Nearly every knob — world size, ship speed, turn feel, spawn ramp, trident power —
-lives in `source/scripts/utilities/Config.lua`.
+lives in `source/scripts/config/Config.lua`.

@@ -14,8 +14,8 @@
 -- LevelCompleteScene's own transition logic, while Ⓑ backs out to the
 -- select list without applying anything.
 
-import "scripts/utilities/Config"
-import "scripts/player/ConfigUpgrades"
+import "scripts/config/Config"
+import "scripts/config/ConfigUpgrades"
 import "scripts/utilities/MenuCard"
 
 local gfx <const> = playdate.graphics

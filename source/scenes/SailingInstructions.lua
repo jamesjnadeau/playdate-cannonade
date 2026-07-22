@@ -49,7 +49,7 @@
 --                       own ask/confirm gate, since the player just proved
 --                       they can sail).
 
-import "scripts/utilities/Config"
+import "scripts/config/Config"
 import "scripts/utilities/Utils"
 import "scripts/utilities/Sound"
 import "scenes/InstructionsScene"

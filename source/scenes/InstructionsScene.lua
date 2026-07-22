@@ -13,7 +13,7 @@
 -- SailingInstructions lesson instead -- see onAButtonDown/onBButtonDown.
 -- Once past the gate, Ⓑ exits back to Title at any point, regardless of step.
 
-import "scripts/utilities/Config"
+import "scripts/config/Config"
 import "scripts/utilities/Utils"
 import "scripts/enemies/EnemyDummy"
 import "scenes/GameScene"

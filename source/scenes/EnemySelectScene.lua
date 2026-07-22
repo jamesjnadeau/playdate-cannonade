@@ -10,7 +10,7 @@
 -- to GameSceneTraining, Ⓑ cancels back without changing the current
 -- selection.
 
-import "scripts/utilities/Config"
+import "scripts/config/Config"
 import "scripts/utilities/MenuCard"
 
 local gfx <const> = playdate.graphics

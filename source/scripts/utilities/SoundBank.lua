@@ -7,7 +7,7 @@
 -- clip into memory up front -- appropriate for short one-shot SFX, unlike
 -- MusicPlayer.lua's streamed fileplayer used for full songs.
 
-import "scripts/utilities/Config"
+import "scripts/config/Config"
 
 local snd <const> = playdate.sound
 

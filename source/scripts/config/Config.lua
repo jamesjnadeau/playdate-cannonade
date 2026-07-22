@@ -65,14 +65,14 @@ Config.WAKE_WIND_INFLUENCE = 0.2
 -- overwrite the whole table or just a field to get its own look.
 Config.EXPLOSION = {
 	mode     = Particles.modes.DECAY,
-	decay    = 0.25,
+	decay    = 0.5,
 	size     = { 2, 5 },
-	speed    = { 2, 9 },      -- pdParticles speed is per-frame
+	speed    = { 9, 20 },      -- pdParticles speed is per-frame
 	spread   = { 0, 100 },
 	lifespan = { 1, 3 },
 	color    = gfx.kColorBlack,
 	count    = 10,
-	maxAge   = 120,           -- frames; safety net if particles never fully decay
+	maxAge   = 200,           -- frames; safety net if particles never fully decay
 }
 -- How much wind bends the explosion's spread arc toward the direction the
 -- wind is blowing (0 = ignore wind and use spread as authored above, 1 =

@@ -5,7 +5,7 @@
 -- wind. UpgradeSelectScene routes here only on levels where the step
 -- actually changes; other levels go straight back to gameScene.
 
-import "scripts/utilities/Config"
+import "scripts/config/Config"
 
 local gfx <const> = playdate.graphics
 

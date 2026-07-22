@@ -2,7 +2,7 @@
 -- Start screen: Up/Down (or the crank) pick a scene, A or B confirms.
 -- Rendered with the playout UI library, see libraries/playout.lua.
 
-import "scripts/utilities/Config"
+import "scripts/config/Config"
 import "scripts/utilities/Sound"
 
 local gfx <const> = playdate.graphics

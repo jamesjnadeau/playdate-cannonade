@@ -1,6 +1,6 @@
 -- StormCloud.lua
 -- A slow-moving hazard summoned by the "Storm Cloud" upgrade
--- (source/scripts/player/ConfigUpgrades.lua): drifts toward whichever enemy is
+-- (source/scripts/config/ConfigUpgrades.lua): drifts toward whichever enemy is
 -- currently nearest and, on a fixed interval, damages every enemy within
 -- Config.STORM_CLOUD_RADIUS -- not just the one it's drifting toward, so a
 -- second enemy that wanders into range still takes damage. With no enemy
@@ -15,7 +15,7 @@
 -- ship and explosions), so a cloud always shows on top of everything it
 -- overlaps rather than being hidden behind the hull or a burst.
 
-import "scripts/utilities/Config"
+import "scripts/config/Config"
 import "scripts/utilities/Utils"
 
 local gfx <const> = playdate.graphics

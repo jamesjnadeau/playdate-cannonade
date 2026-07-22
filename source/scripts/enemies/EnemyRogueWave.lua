@@ -21,8 +21,8 @@
 -- moving at the moment of impact (see EnemyRogueWave:onRamHit and
 -- Player:applyKnockback/updateKnockback for the impact-then-decay feel).
 
-import "scripts/utilities/Config"
-import "scripts/enemies/ConfigEnemy"
+import "scripts/config/Config"
+import "scripts/config/ConfigEnemy"
 import "scripts/utilities/Utils"
 import "scripts/enemies/Enemy"
 

@@ -14,24 +14,26 @@ tools/simulate.sh`.
 
 ## `source/scripts/` layout
 
-`source/scripts/` is split into three subfolders by responsibility, rather
+`source/scripts/` is split into four subfolders by responsibility, rather
 than one flat directory:
 
 - **`player/`** — the player ship and anything it wields: `Player.lua`,
-  `ConfigUpgrades.lua`, `Tridentball.lua` (the fired projectile),
-  `StormCloud.lua` (the "Storm Cloud" upgrade's summoned hazard).
+  `Tridentball.lua` (the fired projectile), `StormCloud.lua` (the "Storm
+  Cloud" upgrade's summoned hazard).
 - **`enemies/`** — enemy classes: `Enemy.lua` (base class) and its
-  subclasses (`EnemySwordfish.lua`, `EnemyKraken.lua`, `EnemyDummy.lua`),
-  plus `ConfigEnemy.lua`.
+  subclasses (`EnemySwordfish.lua`, `EnemyKraken.lua`, `EnemyDummy.lua`).
 - **`utilities/`** — everything shared or not specific to player/enemies:
-  `Config.lua`, `Utils.lua`, `Ship.lua` (base class for both `Player` and
-  `Enemy`), `MenuCard.lua`, `MusicPlayer.lua`, `Sound.lua`, `SoundBank.lua`.
+  `Utils.lua`, `Ship.lua` (base class for both `Player` and `Enemy`),
+  `MenuCard.lua`, `MusicPlayer.lua`, `Sound.lua`, `SoundBank.lua`.
+- **`config/`** — all `Config*.lua` tuning/state tables: `Config.lua`,
+  `ConfigEnemy.lua`, `ConfigUpgrades.lua`, `ConfigTuning.lua`.
 
 New enemy scripts go in `enemies/` — `tools/new-enemy.sh` already targets
-that folder. When adding a new script elsewhere, put it in whichever folder
-matches its subject (player-specific, enemy-specific, or shared/utility);
-update `import`/`dofile` paths throughout (`main.lua`, `source/scenes/*.lua`,
-`tests/support/*.lua`) to match wherever it lands.
+that folder (its generated `Config.ENEMY_*` block goes into `config/ConfigEnemy.lua`).
+When adding a new script elsewhere, put it in whichever folder matches its
+subject (player-specific, enemy-specific, shared/utility, or a new
+`Config*.lua` table); update `import`/`dofile` paths throughout (`main.lua`,
+`source/scenes/*.lua`, `tests/support/*.lua`) to match wherever it lands.
 
 ## Build/run verification
 
@@ -92,7 +94,7 @@ This is editor-only tooling — plain comments, no effect on `pdc`/the compiled
 ## Upgrade storage: mutates the global `Config` table directly
 
 There's no separate "owned upgrades" list or per-player upgrade state.
-`Config.applyUpgrade` (`source/scripts/player/ConfigUpgrades.lua`) mutates the
+`Config.applyUpgrade` (`source/scripts/config/ConfigUpgrades.lua`) mutates the
 shared global `Config` table in place — e.g. picking "Twin Tridents" just
 increments `Config.TRIDENT_COUNT`. Since `Config` is a module-level table
 imported once from `main.lua` and never re-executed, this state is
@@ -197,7 +199,7 @@ Plain-`lua5.4` unit tests — no Playdate SDK or Simulator involved. Two tiers:
 
 - Pure-logic files that don't use `class("X").extends(...)` at all
   (`source/scripts/utilities/Utils.lua`, `Config.applyUpgrade` in
-  `source/scripts/player/ConfigUpgrades.lua`) — loaded under `support/mock_playdate.lua`,
+  `source/scripts/config/ConfigUpgrades.lua`) — loaded under `support/mock_playdate.lua`,
   a minimal `playdate`/`Particles` global stand-in.
 - The scene system (`source/scenes/*.lua`, real files, not copies) — loaded
   under `support/mock_noble.lua`, a from-scratch stand-in for the Playdate
@@ -275,7 +277,7 @@ so a stale diagram and a stale test tend to go stale together — update both.
   `build.sh`: the user runs this themselves. If `MERMAID_START_SCENE` is set
   in the environment, forwards it as a launch argument so `main.lua` can pick
   a non-default boot scene — see `Config.START_SCENE` in
-  `source/scripts/utilities/Config.lua` and the "Response Notes" section above.
+  `source/scripts/config/Config.lua` and the "Response Notes" section above.
 - **`fetch-deps.sh`** — pulls the two vendored dependencies into
   `source/libraries/` if they aren't already present: Noble Engine (git clone)
   and pdParticles + playout (curl'd single files). Idempotent — safe to

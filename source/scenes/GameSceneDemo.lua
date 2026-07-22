@@ -6,7 +6,7 @@
 -- item launches this instead of GameSceneMain when Config.DEMO_MODE is on
 -- (see main.lua's sceneByName and TitleScene's confirmSelection).
 
-import "scripts/utilities/Config"
+import "scripts/config/Config"
 import "scenes/GameSceneMain"
 import "scenes/DemoOverScene"
 

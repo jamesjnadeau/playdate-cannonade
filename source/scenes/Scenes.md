@@ -360,7 +360,7 @@ A broad debug/tweak surface, not a curated player-facing settings screen
 like `SettingsScene`'s rows: a single scrollable, categorized menu covering
 nearly every remaining `Config.lua` tuning value (~90 fields, grouped to
 mirror `Config.lua`'s own section comments — the table itself now lives in
-`source/scripts/utilities/ConfigTuning.lua`, not this file). Changes are
+`source/scripts/config/ConfigTuning.lua`, not this file). Changes are
 runtime-only by default — they mutate the global `Config` table in place,
 the same way `SettingsScene`'s `HUD_SHOW_*` toggles already do — but this
 scene also adds three items to the system menu while active (see the 3-item
@@ -453,7 +453,7 @@ without needing to know what it is — see `GameSceneMain.gameSceneClass`.
 ## UpgradeSelectScene
 
 Offers 3 randomly-drawn entries from `Config.UPGRADES`
-(`source/scripts/player/ConfigUpgrades.lua`) — entries with an `available` predicate
+(`source/scripts/config/ConfigUpgrades.lua`) — entries with an `available` predicate
 (e.g. "Rapid Autolightning", which requires the Autolightning upgrade already
 installed) are excluded from the draw pool until it returns true; see
 `pickUpgrades` — rendered with

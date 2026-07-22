@@ -5,8 +5,8 @@
 -- GameSceneDemo (a level-capped build variant, see Config.DEMO_MODE)
 -- overrides to end the run instead once its cap is reached.
 
-import "scripts/utilities/Config"
-import "scripts/enemies/ConfigEnemy"
+import "scripts/config/Config"
+import "scripts/config/ConfigEnemy"
 import "scripts/utilities/Utils"
 import "scenes/GameScene"
 

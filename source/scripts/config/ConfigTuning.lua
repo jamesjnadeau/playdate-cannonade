@@ -3,7 +3,7 @@
 -- and TuningDiffScene (source/scenes/TuningDiffScene.lua), split out of
 -- TuningScene.lua like ConfigEnemy.lua/ConfigUpgrades.lua were split out of
 -- Config.lua -- still just describes/reads/writes the shared global Config
--- table, not a separate state store. Import "scripts/utilities/Config"
+-- table, not a separate state store. Import "scripts/config/Config"
 -- first (this file assumes Config.WATER_GRID etc. already exist).
 --
 -- Also owns the three system-menu actions TuningScene wires up ("Load
@@ -23,7 +23,7 @@
 --    the fresh-load baseline so TuningDiffScene can show what a Load
 --    actually changed.
 
-import "scripts/utilities/Config"
+import "scripts/config/Config"
 
 ---@class ConfigTuning.Item
 ---@field key string Config field this row edits

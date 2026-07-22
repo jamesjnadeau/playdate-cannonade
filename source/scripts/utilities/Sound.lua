@@ -5,7 +5,7 @@
 -- sampled one-shots played through a SoundBank (source/assets/sounds,
 -- rendered from art-src/sounds by tools/render-sfx.sh -- see SoundBank.lua).
 
-import "scripts/utilities/Config"
+import "scripts/config/Config"
 import "scripts/utilities/SoundBank"
 
 local snd <const> = playdate.sound

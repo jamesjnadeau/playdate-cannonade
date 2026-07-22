@@ -1,8 +1,8 @@
 -- Enemy.lua
 -- A hostile ship that steers toward the player and rams them.
 
-import "scripts/utilities/Config"
-import "scripts/enemies/ConfigEnemy"
+import "scripts/config/Config"
+import "scripts/config/ConfigEnemy"
 import "scripts/utilities/Utils"
 import "scripts/utilities/Ship"
 

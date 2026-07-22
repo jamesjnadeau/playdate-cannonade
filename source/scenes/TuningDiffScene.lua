@@ -13,8 +13,8 @@
 -- list most of ConfigTuning.ITEMS). Up/Down move the highlight (wraps); the
 -- crank fast-scrolls; Ⓑ returns to TuningScene.
 
-import "scripts/utilities/Config"
-import "scripts/utilities/ConfigTuning"
+import "scripts/config/Config"
+import "scripts/config/ConfigTuning"
 import "scripts/utilities/MenuCard"
 
 local gfx <const> = playdate.graphics

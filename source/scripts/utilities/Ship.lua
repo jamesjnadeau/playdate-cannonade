@@ -1,7 +1,7 @@
 -- Ship.lua
 -- Base class for all ships (player and enemy).
 
-import "scripts/utilities/Config"
+import "scripts/config/Config"
 import "scripts/utilities/Utils"
 
 local gfx <const> = playdate.graphics

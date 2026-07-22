@@ -8,7 +8,7 @@
 -- like SettingsScene's HUD_SHOW_* toggles already do -- but this scene's
 -- system-menu items (see below) can persist/restore a whole snapshot of
 -- them via playdate.datastore, through ConfigTuning
--- (source/scripts/utilities/ConfigTuning.lua), which owns the actual
+-- (source/scripts/config/ConfigTuning.lua), which owns the actual
 -- ITEMS/CATEGORIES table, the fresh-load default snapshot, and the
 -- save/load/diff logic.
 --
@@ -44,8 +44,8 @@
 -- Config.MUSIC_VOLUME/MUSIC_SONG/MUSIC_ENABLED, and Config.HUD_SHOW_FPS --
 -- all covered by SettingsScene instead).
 
-import "scripts/utilities/Config"
-import "scripts/utilities/ConfigTuning"
+import "scripts/config/Config"
+import "scripts/config/ConfigTuning"
 import "scripts/utilities/Utils"
 import "scripts/utilities/MenuCard"
 

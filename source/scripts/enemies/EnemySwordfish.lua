@@ -4,8 +4,8 @@
 -- (see Config.lua) -- Enemy:update/draw already read from instance fields, so
 -- this subclass just points those fields at its own config values.
 
-import "scripts/utilities/Config"
-import "scripts/enemies/ConfigEnemy"
+import "scripts/config/Config"
+import "scripts/config/ConfigEnemy"
 import "scripts/utilities/Utils"
 import "scripts/enemies/Enemy"
 

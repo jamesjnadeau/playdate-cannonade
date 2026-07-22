@@ -27,7 +27,7 @@ PREFIX="ENEMY_${SNAKE}"
 ROOT="$(cd "$(dirname "$0")/.." && pwd)"
 SCRIPTS="$ROOT/source/scripts/enemies"
 ENEMY_FILE="$SCRIPTS/Enemy${NAME}.lua"
-CONFIG_FILE="$SCRIPTS/ConfigEnemy.lua"
+CONFIG_FILE="$ROOT/source/scripts/config/ConfigEnemy.lua"
 
 if [ -f "$ENEMY_FILE" ]; then
 	echo "Error: $ENEMY_FILE already exists" >&2
@@ -46,8 +46,8 @@ cat > "$ENEMY_FILE" <<LUA
 -- already read from instance fields, so this subclass just points those
 -- fields at its own config values.
 
-import "scripts/utilities/Config"
-import "scripts/enemies/ConfigEnemy"
+import "scripts/config/Config"
+import "scripts/config/ConfigEnemy"
 import "scripts/utilities/Utils"
 import "scripts/enemies/Enemy"
 

@@ -5,8 +5,8 @@
 -- their own enemy-spawning policy and extra HUD text; see updateSpawning()
 -- and drawModeStatus() below. This class is never instantiated directly.
 
-import "scripts/utilities/Config"
-import "scripts/enemies/ConfigEnemy"
+import "scripts/config/Config"
+import "scripts/config/ConfigEnemy"
 import "scripts/utilities/Utils"
 import "scripts/player/Player"
 import "scripts/enemies/Enemy"

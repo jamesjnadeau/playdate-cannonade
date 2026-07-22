@@ -5,7 +5,7 @@
 -- handoff the rest of the way (to WindShiftScene or back to gameScene
 -- itself, see GameSceneMain.windStepForLevel).
 
-import "scripts/utilities/Config"
+import "scripts/config/Config"
 
 local gfx <const> = playdate.graphics
 

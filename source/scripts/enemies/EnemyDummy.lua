@@ -4,7 +4,7 @@
 -- or ramming them. Not one of GameScene.enemyTypes -- never eligible for
 -- random spawning in real gameplay.
 
-import "scripts/utilities/Config"
+import "scripts/config/Config"
 import "scripts/enemies/Enemy"
 
 ---@class EnemyDummy : Enemy

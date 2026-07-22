@@ -15,7 +15,7 @@
 -- the volume; Ⓐ toggles a HUD/Music setting or opens Tuning; Ⓑ returns to the
 -- title screen.
 
-import "scripts/utilities/Config"
+import "scripts/config/Config"
 import "scripts/utilities/Utils"
 import "scripts/utilities/MusicPlayer"
 import "scripts/utilities/MenuCard"

@@ -1,7 +1,7 @@
 -- Tridentball.lua
 -- A projectile fired from the ship toward an auto-targeted enemy.
 
-import "scripts/utilities/Config"
+import "scripts/config/Config"
 import "scripts/utilities/Utils"
 
 local gfx <const> = playdate.graphics

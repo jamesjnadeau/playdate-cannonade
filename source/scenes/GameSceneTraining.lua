@@ -3,7 +3,7 @@
 -- level progression. Press A to spawn one enemy, B to bring up a "return to
 -- title?" confirmation (A confirms, B cancels back into training).
 
-import "scripts/utilities/Config"
+import "scripts/config/Config"
 import "scenes/GameScene"
 
 local gfx <const> = playdate.graphics

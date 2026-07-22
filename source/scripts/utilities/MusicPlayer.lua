@@ -14,7 +14,7 @@
 -- approach's synthesized-instrument flexibility for real sampled audio and
 -- a much cheaper runtime.
 
-import "scripts/utilities/Config"
+import "scripts/config/Config"
 
 local snd <const> = playdate.sound
 

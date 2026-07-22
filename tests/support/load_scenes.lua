@@ -19,10 +19,10 @@
 
 dofile("tests/support/mock_noble.lua")
 
-dofile("source/scripts/utilities/Config.lua")
-dofile("source/scripts/enemies/ConfigEnemy.lua")
-dofile("source/scripts/player/ConfigUpgrades.lua")
-dofile("source/scripts/utilities/ConfigTuning.lua")
+dofile("source/scripts/config/Config.lua")
+dofile("source/scripts/config/ConfigEnemy.lua")
+dofile("source/scripts/config/ConfigUpgrades.lua")
+dofile("source/scripts/config/ConfigTuning.lua")
 dofile("source/scripts/utilities/Utils.lua")
 dofile("source/scripts/utilities/MusicPlayer.lua")
 dofile("source/scripts/utilities/MenuCard.lua")
