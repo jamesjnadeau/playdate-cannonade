@@ -183,7 +183,10 @@ function TitleScene:update()
 	-- sit alone for a beat), then just appears in place -- no rise/slide. A
 	-- lightning crack plays the instant it first appears -- but only the
 	-- first time this game session, see lightningPlayedThisSession above.
-	if self.t < Config.TITLE_MENU_DELAY then return end
+	-- Once that's already happened, skip the delay too -- a player bouncing
+	-- back to the title screen (e.g. from Settings) shouldn't have to wait
+	-- through it again.
+	if self.t < Config.TITLE_MENU_DELAY and not lightningPlayedThisSession then return end
 	if not lightningPlayedThisSession then
 		Sound.playLightning()
 		lightningPlayedThisSession = true
