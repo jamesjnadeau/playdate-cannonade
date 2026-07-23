@@ -194,10 +194,15 @@ Config.ENEMY_SEA_SERPENT_DAMAGE = math.floor(Config.ENEMY_DAMAGE * 1.5)  -- a lo
 Config.ENEMY_SEA_SERPENT_WIND_MULTIPLIER = Config.ENEMY_WIND_MULTIPLIER
 Config.ENEMY_SEA_SERPENT_COLOR = gfx.kColorBlack
 Config.ENEMY_SEA_SERPENT_MIN_LEVEL = 2  -- unlocked starting this level -- see Config.ENEMY_MIN_LEVEL
--- Head triangle: base (width HEAD_WIDTH * 2) centered on the head position,
--- tip HEAD_LENGTH ahead of it along the heading.
-Config.ENEMY_SEA_SERPENT_HEAD_LENGTH = 24
-Config.ENEMY_SEA_SERPENT_HEAD_WIDTH = 24
+-- Head sprite (source/assets/images/sea-serpent-head.png, see
+-- tools/render-sea-serpent-head.sh): drawn HEAD_LENGTH px ahead of the head
+-- position along the heading, HEAD_WIDTH*2 px wide -- same box the old head
+-- triangle used. HEAD_WIDTH is smaller than HEAD_LENGTH (unlike the old
+-- triangle, where they matched) to match the sprite's real proportions --
+-- see that script's header for why forcing the old 24x48 (wider-than-long)
+-- box distorted the art.
+Config.ENEMY_SEA_SERPENT_HEAD_LENGTH = 48
+Config.ENEMY_SEA_SERPENT_HEAD_WIDTH = 20
 -- Trailing body: configurable count/size/spacing of the black ellipses that
 -- follow the head along its actual travelled path (see
 -- EnemySeaSerpent:updateTrail) -- not baked into the rotated body image like
@@ -248,9 +253,9 @@ Config.ENEMY_BLUE_WHALE_ATTACK_RADIUS = 70
 -- tuning. Bigger than EnemyRogueWave's charge shove -- "great speed" from a
 -- much bigger animal.
 Config.ENEMY_BLUE_WHALE_KNOCKBACK_DISTANCE = 180
-Config.ENEMY_BLUE_WHALE_LENGTH = 40  -- half-length of the body ellipse when surfaced
-Config.ENEMY_BLUE_WHALE_BEAM   = 18  -- half-width of the body ellipse when surfaced
-Config.ENEMY_BLUE_WHALE_RADIUS = 26  -- collision radius while surfaced; smaller than LENGTH since the ellipse tapers at both ends
+Config.ENEMY_BLUE_WHALE_LENGTH = 65  -- half-length of the body ellipse when surfaced
+Config.ENEMY_BLUE_WHALE_BEAM   = 25  -- half-width of the body ellipse when surfaced
+Config.ENEMY_BLUE_WHALE_RADIUS = 65  -- collision radius while surfaced; smaller than LENGTH since the ellipse tapers at both ends
 Config.ENEMY_BLUE_WHALE_HEALTH = 2   -- tankier than any other enemy -- it's only ever hittable during its SURFACE_TIME window
 Config.ENEMY_BLUE_WHALE_DAMAGE = Config.ENEMY_DAMAGE * 2  -- touching a surfaced whale hurts more than a steady-homing enemy
 Config.ENEMY_BLUE_WHALE_COLOR = gfx.kColorBlack

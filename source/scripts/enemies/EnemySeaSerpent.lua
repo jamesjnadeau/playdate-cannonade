@@ -12,7 +12,8 @@
 -- history, not a rigid shape rotated with the head, so this class tracks its
 -- own self.trail and overrides :draw() entirely rather than going through
 -- Ship's cached-body-image + drawRotated path (see EnemySeaSerpent:updateTrail
--- / :draw). A black triangle head leads the way, drawn frontmost.
+-- / :draw). The headImage sprite (see the top of this file) leads the way,
+-- drawn frontmost.
 --
 -- The trail starts empty (see :init), so the body rolls out behind the head
 -- over its first few segment-lengths of travel rather than the full length
@@ -29,12 +30,22 @@ import "scripts/enemies/Enemy"
 
 local gfx <const> = playdate.graphics
 
+-- Sprite for the head -- see tools/render-sea-serpent-head.sh for how this
+-- was derived from art-src/sea_serpent_head.png (background removal, trim,
+-- and a rotation so the chin points along local +x, this game's heading-0
+-- convention). Baked at exactly Config.ENEMY_SEA_SERPENT_HEAD_LENGTH x 2x
+-- HEAD_WIDTH's current defaults (24x20) so drawing it at those defaults is
+-- an identity scale -- same reasoning as EnemyBlueWhale.lua's whaleImage.
+local headImage = gfx.image.new("assets/images/sea-serpent-head")
+assert(headImage, "missing assets/images/sea-serpent-head")
+local headImageWidth, headImageHeight = headImage:getSize()
+
 ---@class EnemySeaSerpent : Enemy
 ---@field segmentCount integer number of trailing body ellipses
 ---@field segmentRadius number px radius of each body ellipse
 ---@field segmentSeparation number px between consecutive segment centers along the path
----@field headLength number px from the head position to the triangle's tip
----@field headWidth number px half-width of the triangle's base
+---@field headLength number px the head sprite is drawn forward of the head position, see EnemySeaSerpent:draw
+---@field headWidth number px half-width the head sprite is drawn at
 ---@field trail {x: number, y: number}[] head-to-tail history of past head positions, one per body segment
 ---@field trailDist number px accumulated since the last trail sample, see updateTrail
 ---@field prevX number head x last frame, see updateTrail
@@ -268,8 +279,8 @@ function EnemySeaSerpent:drawBodyLocal(cx, cy)
 		gfx.fillEllipseInRect(sx - segmentRadius, cy - segmentRadius, segmentRadius * 2, segmentRadius * 2)
 	end
 
-	local tipX, tipY = cx + headLength, cy
-	gfx.fillTriangle(tipX, tipY, cx, cy - headWidth, cx, cy + headWidth)
+	local hsx, hsy = headLength / headImageWidth, (headWidth * 2) / headImageHeight
+	headImage:drawScaled(cx, cy - headWidth, hsx, hsy)
 end
 
 -- Bounding radius of the scaled reference pose above -- see
@@ -277,9 +288,9 @@ end
 -- construction (see previewDimensions).
 ---@return number
 function EnemySeaSerpent:bodyRadius()
-	local n, headLength, _, segmentRadius, segmentSeparation = self:previewDimensions()
+	local n, headLength, headWidth, segmentRadius, segmentSeparation = self:previewDimensions()
 	local tailReach = n * segmentSeparation + segmentRadius
-	return math.max(headLength, tailReach)
+	return math.max(headLength, headWidth, tailReach)
 end
 
 -- Live per-frame draw. Unlike other Enemy subclasses this never goes through
@@ -292,7 +303,7 @@ function EnemySeaSerpent:draw()
 
 	gfx.setColor(self.color)
 
-	-- Body first (tail to head) so the head triangle ends up drawn on top of
+	-- Body first (tail to head) so the head sprite ends up drawn on top of
 	-- the foremost body segment, reading as the segments trailing behind it
 	-- rather than the head poking out from underneath. #self.trail (not
 	-- self.segmentCount) since the trail may still be rolling out -- see init.
@@ -302,12 +313,15 @@ function EnemySeaSerpent:draw()
 		gfx.fillEllipseInRect(p.x - r, p.y - r, r * 2, r * 2)
 	end
 
+	-- headImage drawn headLength/2 ahead of self.x/y (drawRotated centers on
+	-- the point given) so it spans the same box the old triangle did: from
+	-- the head position back to headLength ahead of it, headWidth to each
+	-- side, rotated around that center by self.heading -- see the top of
+	-- this file for why angle 0 already points along +x.
 	local hx, hy = Utils.heading(self.heading)
-	local px, py = -hy, hx
-	local tipX, tipY = self.x + hx * self.headLength, self.y + hy * self.headLength
-	local leftX, leftY = self.x + px * self.headWidth, self.y + py * self.headWidth
-	local rightX, rightY = self.x - px * self.headWidth, self.y - py * self.headWidth
-	gfx.fillTriangle(tipX, tipY, leftX, leftY, rightX, rightY)
+	local hsx, hsy = self.headLength / headImageWidth, (self.headWidth * 2) / headImageHeight
+	local centerX, centerY = self.x + hx * (self.headLength * 0.5), self.y + hy * (self.headLength * 0.5)
+	headImage:drawRotated(centerX, centerY, self.heading, hsx, hsy)
 
 	if self.health < self.maxHealth then
 		self:drawHealthBar()
