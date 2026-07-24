@@ -224,24 +224,29 @@ Config.ENEMY_SEA_SERPENT_HEALTH_BAR_OFFSET = 0
 -- Enemy: Blue Whale --
 ---------------------------
 -- An ambush Enemy variant (see EnemyBlueWhale.lua) that doesn't chase at all:
--- it cycles through four states instead of steering toward the player --
+-- it cycles through five states instead of steering toward the player --
 --   "submerged": invisible and harmless, for SUBMERGE_TIME seconds
 --   "warning":   still invisible, but a dithered circle at the spot it's about
 --     to surface (radius ATTACK_RADIUS) darkens over WARN_TIME seconds as the
 --     surfacing gets closer -- the player's cue to clear that spot
---   "breaching": still invisible and harmless, for BREACH_TIME seconds -- a
---     brief beat after the telegraph circle is gone and before the whale
---     actually appears/hits, so the two never visually overlap
+--   "breaching": plays the rising/splash portion of the blue-whale-loop
+--     animation (see EnemyBlueWhale:currentLoopFrame) over BREACH_TIME
+--     seconds -- still harmless, so the telegraph circle and the whale
+--     surfacing never overlap as a hit
 --   "surfaced":  appears at that spot, throwing anything within ATTACK_RADIUS
 --     outward (Player:applyKnockback, same mechanism as EnemyRogueWave's
---     charge hit), then sits there breathing -- vulnerable to tridents/Storm
---     Cloud/lightning like any other enemy -- for SURFACE_TIME seconds
--- before submerging again, retargeting the player's position at that moment,
--- and repeating. See EnemyBlueWhale:update for the exact transitions.
+--     charge hit), then sits there holding the animation's peak splash
+--     frame -- vulnerable to tridents/Storm Cloud/lightning like any other
+--     enemy -- for SURFACE_TIME seconds
+--   "diving":    plays the sinking portion of the same animation over
+--     DIVE_TIME seconds, harmless again, before going back to "submerged"
+-- and repeating, retargeting the player's position at that moment. See
+-- EnemyBlueWhale:update for the exact transitions.
 Config.ENEMY_BLUE_WHALE_WARN_TIME     = 2.5  -- seconds the darkening telegraph circle plays before surfacing
-Config.ENEMY_BLUE_WHALE_BREACH_TIME   = 0.2  -- seconds of nothing (no circle, no whale, no hit) between the circle vanishing and the whale surfacing/hitting
+Config.ENEMY_BLUE_WHALE_BREACH_TIME   = 2.0  -- seconds spent playing the whale's rising/breaching animation before it's surfaced and hittable -- matches the "surfaced" pose landing at exactly 2.0s into art-src/blue-whale.mp4, see tools/render-blue-whale-loop.sh
 Config.ENEMY_BLUE_WHALE_SURFACE_TIME  = 3    -- seconds spent surfaced ("breathing") before submerging again
-Config.ENEMY_BLUE_WHALE_SUBMERGE_TIME = 4    -- seconds spent submerged (invisible, harmless) before the next warning
+Config.ENEMY_BLUE_WHALE_DIVE_TIME     = 2.9  -- seconds spent playing the whale's sinking/diving animation after SURFACE_TIME ends, harmless, before it's fully invisible again -- the remainder of art-src/blue-whale.mp4 past the 2.0s peak
+Config.ENEMY_BLUE_WHALE_SUBMERGE_TIME = 4    -- seconds spent submerged (invisible, harmless) before the next warning -- on top of DIVE_TIME, not overlapping it
 -- Radius (px) of both the warning telegraph circle and the knockback burst it
 -- promises -- kept as one value so the circle honestly previews the danger
 -- zone rather than just approximating it.

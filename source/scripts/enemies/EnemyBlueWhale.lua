@@ -1,6 +1,6 @@
 -- EnemyBlueWhale.lua
 -- An ambush Enemy variant that never chases: instead of Enemy:update's
--- continuous homing turn, it cycles through four states (see
+-- continuous homing turn, it cycles through five states (see
 -- EnemyBlueWhale:update) --
 --   "submerged": invisible and harmless (self.radius pinned to 0, so neither
 --     ramming nor tridents/Storm Cloud/lightning can touch it), for
@@ -8,19 +8,28 @@
 --   "warning":   still invisible, but draws a dithered circle at the spot
 --     it's about to surface that darkens over Config.ENEMY_BLUE_WHALE_WARN_TIME
 --     seconds as the surfacing gets closer -- see EnemyBlueWhale:drawWarningCircle
---   "breaching": still invisible and harmless, for a brief
---     Config.ENEMY_BLUE_WHALE_BREACH_TIME beat -- separates the telegraph
---     circle vanishing from the whale actually appearing/hitting, so a
---     player watching never sees the hit land while the circle's still up
---   "surfaced":  teleports to that spot, throws anything within
---     Config.ENEMY_BLUE_WHALE_ATTACK_RADIUS outward (see EnemyBlueWhale:onRamHit),
---     then sits there visible and vulnerable (like any other enemy) for
---     Config.ENEMY_BLUE_WHALE_SURFACE_TIME seconds before submerging again --
+--   "breaching": teleports to that spot (so the animation plays in the right
+--     place) and plays the rising/splash portion of the whaleLoopFrames
+--     animation over Config.ENEMY_BLUE_WHALE_BREACH_TIME seconds -- still
+--     harmless, so the telegraph circle and the hit never visually overlap
+--   "surfaced":  throws anything within Config.ENEMY_BLUE_WHALE_ATTACK_RADIUS
+--     outward (see EnemyBlueWhale:onRamHit), then sits there holding the
+--     animation's peak splash frame, visible and vulnerable (like any other
+--     enemy) for Config.ENEMY_BLUE_WHALE_SURFACE_TIME seconds
+--   "diving":    plays the sinking portion of the same animation over
+--     Config.ENEMY_BLUE_WHALE_DIVE_TIME seconds, harmless again, before going
+--     back to "submerged" --
 -- at which point it retargets wherever the player is at that moment and
 -- repeats. All tuning lives in Config.ENEMY_BLUE_WHALE_* (see ConfigEnemy.lua).
 --
--- Drawn as the whaleImage sprite (see EnemyBlueWhale:drawBodyLocal) rather
--- than a hull polygon, only while "surfaced" -- see EnemyBlueWhale:draw.
+-- Drawn as an animated sprite (see EnemyBlueWhale:currentLoopFrame/:draw)
+-- during "breaching"/"surfaced"/"diving" -- this never goes through
+-- Ship:draw/buildBodyImage the way every other Enemy subclass does, since
+-- the body isn't a single rigid pose that just rotates with heading, it
+-- changes over time. drawBodyLocal/bodyRadius (below) are kept only as the
+-- static reference pose EnemySelectScene's preview pane bakes via
+-- Ship:buildBodyImage (see EnemySelectScene.lua) -- same split
+-- EnemySeaSerpent.lua uses for the same reason.
 
 import "scripts/config/Config"
 import "scripts/config/ConfigEnemy"
@@ -41,8 +50,23 @@ local whaleImage = gfx.image.new("assets/images/blue-whale")
 assert(whaleImage, "missing assets/images/blue-whale")
 local whaleImageWidth, whaleImageHeight = whaleImage:getSize()
 
+-- Live breach/dive animation -- see tools/render-blue-whale-loop.sh for how
+-- this was derived from art-src/blue-whale.mp4 (per-frame background
+-- removal into real alpha, no rotate -- the splash pose isn't a "nose
+-- forward" shape like whaleImage above, so it's just rotated by self.heading
+-- like everything else at draw time). WHALE_LOOP_FPS must match that
+-- script's --fps. whalePauseFrame is the frame (1-based) landing at
+-- Config.ENEMY_BLUE_WHALE_BREACH_TIME seconds in -- the render script pins
+-- BREACH_TIME and --fps together so this lands exactly on the source video's
+-- full-splash peak (2.0s in) rather than some frame either side of it.
+local WHALE_LOOP_FPS = 10
+local whaleLoopFrames = gfx.imagetable.new("assets/images/blue-whale-loop")
+assert(whaleLoopFrames, "missing assets/images/blue-whale-loop")
+local whaleLoopFrameCount = whaleLoopFrames:getLength()
+local whalePauseFrame = math.floor(Config.ENEMY_BLUE_WHALE_BREACH_TIME * WHALE_LOOP_FPS + 0.5) + 1
+
 ---@class EnemyBlueWhale : Enemy
----@field state string "submerged" | "warning" | "breaching" | "surfaced" -- see EnemyBlueWhale:update
+---@field state string "submerged" | "warning" | "breaching" | "surfaced" | "diving" -- see EnemyBlueWhale:update
 ---@field stateTimer number seconds remaining in the current state
 ---@field targetX number world-space x it will next surface at (or last surfaced at)
 ---@field targetY number world-space y it will next surface at (or last surfaced at)
@@ -119,13 +143,17 @@ function EnemyBlueWhale:update(targetX, targetY, windDirection, windSpeed)
 	elseif self.state == "warning" then
 		self.radius = 0
 		if self.stateTimer <= 0 then
+			-- Teleport here (rather than at the breaching->surfaced transition
+			-- below, where the old instant-pop version did it) so the rising
+			-- animation plays at the actual surfacing spot for the whole of
+			-- "breaching" instead of wherever the whale last was.
+			self.x, self.y = self.targetX, self.targetY
 			self.state = "breaching"
 			self.stateTimer = Config.ENEMY_BLUE_WHALE_BREACH_TIME
 		end
 	elseif self.state == "breaching" then
 		self.radius = 0
 		if self.stateTimer <= 0 then
-			self.x, self.y = self.targetX, self.targetY
 			self.state = "surfaced"
 			self.stateTimer = Config.ENEMY_BLUE_WHALE_SURFACE_TIME
 			self.radius = Config.ENEMY_BLUE_WHALE_RADIUS
@@ -134,9 +162,15 @@ function EnemyBlueWhale:update(targetX, targetY, windDirection, windSpeed)
 	elseif self.state == "surfaced" then
 		self.radius = Config.ENEMY_BLUE_WHALE_RADIUS
 		if self.stateTimer <= 0 then
+			self.state = "diving"
+			self.stateTimer = Config.ENEMY_BLUE_WHALE_DIVE_TIME
+			self.radius = 0
+		end
+	elseif self.state == "diving" then
+		self.radius = 0
+		if self.stateTimer <= 0 then
 			self.state = "submerged"
 			self.stateTimer = Config.ENEMY_BLUE_WHALE_SUBMERGE_TIME
-			self.radius = 0
 		end
 	end
 
@@ -170,13 +204,12 @@ function EnemyBlueWhale:onRamHit(ship)
 	ship:applyKnockback(outward, Config.ENEMY_BLUE_WHALE_KNOCKBACK_DISTANCE)
 end
 
--- Bounding radius of the drawn whaleImage sprite (a LENGTH*2 x BEAM*2 box
--- centered on the ship) -- see Ship:bodyRadius/buildBodyImage. L*1.3 is a
--- safe overestimate (sqrt(L^2+B^2) is the box's actual half-diagonal), kept
--- from the old ellipse+tail-fluke shape this sprite replaced. Fixed
--- regardless of state (self.radius toggles for collision, but the baked
--- body image itself is built once from this and only ever drawn while
--- "surfaced" -- see :draw).
+-- Bounding radius of the whaleImage sprite (a LENGTH*2 x BEAM*2 box centered
+-- on the ship) -- see Ship:bodyRadius/buildBodyImage. L*1.3 is a safe
+-- overestimate (sqrt(L^2+B^2) is the box's actual half-diagonal), kept from
+-- the old ellipse+tail-fluke shape this sprite replaced. Only feeds
+-- EnemySelectScene's static preview bake (see the module comment at the top
+-- of this file) -- the live in-game draw never calls buildBodyImage.
 ---@return number
 function EnemyBlueWhale:bodyRadius()
 	return Config.ENEMY_BLUE_WHALE_LENGTH * 1.3
@@ -184,11 +217,13 @@ end
 
 -- whaleImage (see the top of this file), scaled to 2x LENGTH by 2x BEAM and
 -- centered at (cx, cy), drawn in local space (heading 0 = pointing along +x)
--- for Ship:buildBodyImage to bake and rotate per frame. LENGTH/BEAM scale
--- independently (drawScaled's separate x/y scale factors), same as
--- StormCloud:draw, so the two Config values don't need to share the source
--- art's aspect ratio -- this is how the whale's size stays customizable
--- despite drawing a fixed-aspect sprite instead of a hand-built shape.
+-- for Ship:buildBodyImage to bake into EnemySelectScene's static preview
+-- pose. LENGTH/BEAM scale independently (drawScaled's separate x/y scale
+-- factors), same as StormCloud:draw, so the two Config values don't need to
+-- share the source art's aspect ratio -- this is how the whale's size stays
+-- customizable despite drawing a fixed-aspect sprite instead of a hand-built
+-- shape. Not used by the live in-game draw -- see the module comment at the
+-- top of this file.
 ---@param cx number
 ---@param cy number
 function EnemyBlueWhale:drawBodyLocal(cx, cy)
@@ -220,21 +255,44 @@ function EnemyBlueWhale:drawWarningCircle()
 	gfx.setColor(gfx.kColorBlack) -- clear the dither pattern so it doesn't leak into later world-space draws
 end
 
--- Nothing drawn while "submerged" or "breaching" (fully hidden); the
--- darkening telegraph circle while "warning" (see drawWarningCircle); the
--- normal cached-image hull + health bar while "surfaced" (see
--- Ship:draw/Enemy:drawHealthBar).
+-- Frame (1-based index into whaleLoopFrames) for the current tick --
+-- "breaching" plays 1..whalePauseFrame as stateTimer counts down from
+-- Config.ENEMY_BLUE_WHALE_BREACH_TIME, "diving" plays whalePauseFrame..end as
+-- stateTimer counts down from Config.ENEMY_BLUE_WHALE_DIVE_TIME, and
+-- "surfaced" just holds whalePauseFrame. Deriving the frame from the state
+-- timer (rather than a separate elapsed-time counter) means retuning
+-- BREACH_TIME/DIVE_TIME away from the asset's natural length just holds on
+-- the first/last frame of that phase instead of running off the end of the
+-- imagetable.
+---@return integer
+function EnemyBlueWhale:currentLoopFrame()
+	if self.state == "breaching" then
+		local elapsed = Config.ENEMY_BLUE_WHALE_BREACH_TIME - self.stateTimer
+		return Utils.clamp(1 + math.floor(elapsed * WHALE_LOOP_FPS), 1, whalePauseFrame)
+	elseif self.state == "diving" then
+		local elapsed = Config.ENEMY_BLUE_WHALE_DIVE_TIME - self.stateTimer
+		return Utils.clamp(whalePauseFrame + math.floor(elapsed * WHALE_LOOP_FPS), whalePauseFrame, whaleLoopFrameCount)
+	end
+	return whalePauseFrame
+end
+
+-- Nothing drawn while "submerged" (fully hidden); the darkening telegraph
+-- circle while "warning" (see drawWarningCircle); otherwise ("breaching",
+-- "surfaced", "diving") the current whaleLoopFrames frame, rotated to
+-- self.heading same as Ship:draw's cached-image path, plus the health bar
+-- while "surfaced" (see Enemy:drawHealthBar) -- this never calls Ship:draw,
+-- see the module comment at the top of this file.
 function EnemyBlueWhale:draw()
 	if self.state == "warning" then
 		self:drawWarningCircle()
 		return
 	end
-	if self.state ~= "surfaced" then
+	if self.state == "submerged" then
 		return
 	end
 
-	Ship.draw(self)
-	if self.health < self.maxHealth then
+	whaleLoopFrames:getImage(self:currentLoopFrame()):drawRotated(self.x, self.y, self.heading)
+	if self.state == "surfaced" and self.health < self.maxHealth then
 		self:drawHealthBar()
 	end
 end
